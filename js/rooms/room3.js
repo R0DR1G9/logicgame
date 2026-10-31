@@ -262,6 +262,12 @@
   G.rooms[3] = {
     title: 'Servidor Central',
     build: build,
-    hints: hints
+    hints: hints,
+    actions: {
+      screen: openScreen,
+      manual: openManual,
+      files: openFiles,
+      lock: openLock
+    }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

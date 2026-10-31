@@ -271,6 +271,12 @@
   G.rooms[2] = {
     title: 'Cofre do Enigma',
     build: build,
-    hints: hints
+    hints: hints,
+    actions: {
+      diary: openDiary,
+      drawer: openDrawer,
+      rules: openRules,
+      safe: openSafe
+    }
   };
 })(typeof window !== 'undefined' ? window : globalThis);
