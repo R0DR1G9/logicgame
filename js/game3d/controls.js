@@ -1,5 +1,6 @@
 const SENSITIVITY = 0.0022;
 const TURN_SPEED = 1.9;
+const SILENT_MS = 800;
 const MOVE_KEYS = new Set([
   'KeyW', 'KeyA', 'KeyS', 'KeyD',
   'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
@@ -15,10 +16,12 @@ export function createControls(stage, canvas, hooks) {
   const state = { yaw: 0, pitch: 0, locked: false, drag: false, enabled: false };
   let dragging = false;
   let dragMoved = 0;
+  let silentUntil = 0;
 
   function look(dx, dy) {
-    state.yaw -= dx * SENSITIVITY;
-    state.pitch = clamp(state.pitch - dy * SENSITIVITY, -1.4, 1.4);
+    const scale = hooks.sensitivity ? hooks.sensitivity() : 1;
+    state.yaw -= dx * SENSITIVITY * scale;
+    state.pitch = clamp(state.pitch - dy * SENSITIVITY * scale, -1.4, 1.4);
   }
 
   function clearKeys() {
@@ -27,18 +30,23 @@ export function createControls(stage, canvas, hooks) {
     });
   }
 
-  function requestLock() {
+  function lockFailed() {
+    if (performance.now() < silentUntil) {
+      return;
+    }
+    state.drag = true;
+    hooks.changed();
+  }
+
+  function requestLock(silent) {
+    silentUntil = silent ? performance.now() + SILENT_MS : 0;
     try {
       const result = canvas.requestPointerLock();
       if (result && typeof result.catch === 'function') {
-        result.catch(function () {
-          state.drag = true;
-          hooks.changed();
-        });
+        result.catch(lockFailed);
       }
     } catch (error) {
-      state.drag = true;
-      hooks.changed();
+      lockFailed();
     }
   }
 
@@ -49,6 +57,18 @@ export function createControls(stage, canvas, hooks) {
     if (event.code === 'KeyE') {
       if (!event.repeat) {
         hooks.interact();
+      }
+      return;
+    }
+    if (event.code === 'KeyC') {
+      if (!event.repeat) {
+        hooks.notebook();
+      }
+      return;
+    }
+    if (event.code === 'KeyH') {
+      if (!event.repeat) {
+        hooks.hint();
       }
       return;
     }
@@ -86,7 +106,7 @@ export function createControls(stage, canvas, hooks) {
       dragging = true;
       dragMoved = 0;
     } else {
-      requestLock();
+      requestLock(false);
     }
   });
 
@@ -104,12 +124,12 @@ export function createControls(stage, canvas, hooks) {
     state.locked = document.pointerLockElement === canvas;
     clearKeys();
     hooks.changed();
+    if (!state.locked) {
+      hooks.lockLost();
+    }
   });
 
-  document.addEventListener('pointerlockerror', function () {
-    state.drag = true;
-    hooks.changed();
-  });
+  document.addEventListener('pointerlockerror', lockFailed);
 
   function axes() {
     const forward = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
@@ -131,6 +151,7 @@ export function createControls(stage, canvas, hooks) {
     state: state,
     axes: axes,
     setEnabled: setEnabled,
+    requestLock: requestLock,
     turnSpeed: TURN_SPEED
   };
 }

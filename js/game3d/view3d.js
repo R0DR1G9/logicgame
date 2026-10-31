@@ -3,7 +3,7 @@ import {
   EYE, RADIUS, REACH, SPEED, SPRINT, WALL,
   spawn, doors, roomIndexAt, lockedMessages
 } from './level.js';
-import { move } from './collision.js';
+import { move, collides } from './collision.js';
 import { buildWorld } from './world.js';
 import { createControls } from './controls.js';
 
@@ -11,6 +11,7 @@ const G = window.LogicGame;
 const CENTER = new THREE.Vector2(0, 0);
 const MAX_SUBSTEP = 0.1;
 const MAX_DT = 0.1;
+const HINT_DELAY = 700;
 
 function byId(id) {
   return document.getElementById(id);
@@ -18,6 +19,10 @@ function byId(id) {
 
 let ready = false;
 let running = false;
+let paused = false;
+let intro = false;
+let wasModal = false;
+let hintAfter = 0;
 let renderer = null;
 let camera = null;
 let world = null;
@@ -39,6 +44,11 @@ function status() {
   };
 }
 
+function pixelRatioFor(quality) {
+  const ratios = [0.6, 1, Math.min(window.devicePixelRatio || 1, 2)];
+  return ratios[Math.max(0, Math.min(2, Math.round(quality)))];
+}
+
 function resize() {
   const stage = byId('stage');
   const width = stage.clientWidth;
@@ -51,13 +61,66 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 
+function applySettings() {
+  if (!ready) {
+    return;
+  }
+  const settings = G.settings.get();
+  camera.fov = settings.fov;
+  renderer.setPixelRatio(pixelRatioFor(settings.quality));
+  resize();
+}
+
 function isModalOpen() {
   return !byId('modal').classList.contains('hidden');
 }
 
-function updateOverlay() {
-  const locked = controls.state.locked || controls.state.drag;
-  byId('overlay').classList.toggle('hidden', !running || isModalOpen() || locked);
+function syncUi(modalOpen) {
+  const free = controls.state.locked || controls.state.drag;
+  if (free) {
+    intro = false;
+  }
+  byId('overlay').classList.toggle('hidden', !(running && intro && !paused && !modalOpen));
+  byId('pause').classList.toggle('hidden', !(running && paused));
+  const needHint = running && !intro && !paused && !modalOpen && !free && performance.now() > hintAfter;
+  byId('relock').classList.toggle('hidden', !needHint);
+}
+
+function changed() {
+  if (ready) {
+    syncUi(isModalOpen());
+  }
+}
+
+function openPause() {
+  if (!running || paused) {
+    return;
+  }
+  paused = true;
+  if (controls.state.locked) {
+    document.exitPointerLock();
+  }
+  G.save.write();
+  syncUi(isModalOpen());
+}
+
+function resume() {
+  if (!running || !paused) {
+    return;
+  }
+  paused = false;
+  hintAfter = performance.now() + HINT_DELAY;
+  controls.setEnabled(!isModalOpen());
+  if (!controls.state.drag) {
+    controls.requestLock(false);
+  }
+  syncUi(isModalOpen());
+}
+
+function onLockLost() {
+  if (running && !paused && !intro && !isModalOpen()) {
+    openPause();
+  }
 }
 
 function interact() {
@@ -115,7 +178,7 @@ function updateRoom() {
   G.ui.toast('Nível de acesso ' + index, 'info');
 }
 
-function updateTarget() {
+function updateTarget(modalOpen) {
   raycaster.setFromCamera(CENTER, camera);
   const hits = raycaster.intersectObjects(world.pickables, false);
   let info = null;
@@ -130,11 +193,11 @@ function updateTarget() {
   }
   target = info;
   const prompt = byId('prompt');
-  prompt.classList.toggle('hidden', !info || isModalOpen());
+  prompt.classList.toggle('hidden', !info || modalOpen || paused || intro);
   if (info) {
     prompt.textContent = '[E] ' + info.label;
   }
-  byId('crosshair').classList.toggle('active', Boolean(info));
+  byId('crosshair').classList.toggle('active', Boolean(info) && !paused);
 }
 
 function checkExit() {
@@ -155,17 +218,23 @@ function frame(now) {
     return;
   }
   const modalOpen = isModalOpen();
-  controls.setEnabled(!modalOpen);
+  controls.setEnabled(!modalOpen && !paused);
   if (modalOpen && controls.state.locked) {
     document.exitPointerLock();
   }
-  if (!modalOpen) {
+  const free = controls.state.locked || controls.state.drag;
+  if (wasModal && !modalOpen && !paused && !intro && !free) {
+    hintAfter = performance.now() + HINT_DELAY;
+    controls.requestLock(true);
+  }
+  wasModal = modalOpen;
+  if (!modalOpen && !paused && !intro) {
     step(dt);
   }
   world.update(dt);
   updateRoom();
-  updateTarget();
-  updateOverlay();
+  updateTarget(modalOpen);
+  syncUi(modalOpen);
   checkExit();
   placeCamera();
   renderer.render(world.scene, camera);
@@ -174,14 +243,28 @@ function frame(now) {
 function init() {
   const stage = byId('stage');
   const canvas = byId('view');
+  const settings = G.settings.get();
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  camera = new THREE.PerspectiveCamera(72, 1, 0.05, 80);
+  renderer.setPixelRatio(pixelRatioFor(settings.quality));
+  camera = new THREE.PerspectiveCamera(settings.fov, 1, 0.05, 80);
   camera.rotation.order = 'YXZ';
   world = buildWorld();
   raycaster = new THREE.Raycaster();
   raycaster.far = REACH;
-  controls = createControls(stage, canvas, { interact: interact, changed: updateOverlay });
+  controls = createControls(stage, canvas, {
+    interact: interact,
+    changed: changed,
+    lockLost: onLockLost,
+    sensitivity: function () {
+      return G.settings.get().sensitivity;
+    },
+    notebook: function () {
+      G.main.showNotebook();
+    },
+    hint: function () {
+      G.main.showHint();
+    }
+  });
   new ResizeObserver(resize).observe(stage);
   ready = true;
   requestAnimationFrame(frame);
@@ -194,14 +277,19 @@ function setPose(x, z, yaw, pitch) {
   controls.state.pitch = pitch || 0;
 }
 
-function reset() {
-  if (!ready) {
-    return;
-  }
-  setPose(spawn.x, spawn.z, spawn.yaw, spawn.pitch);
-  currentRoom = 1;
-  winFired = false;
+function reset(resumePose) {
   world.apply(status(), true);
+  world.update(0);
+  let pose = spawn;
+  if (resumePose && [resumePose.x, resumePose.z, resumePose.yaw, resumePose.pitch].every(Number.isFinite)) {
+    if (!collides(resumePose.x, resumePose.z, RADIUS, world.colliders)) {
+      pose = resumePose;
+    }
+  }
+  setPose(pose.x, pose.z, pose.yaw, pose.pitch);
+  currentRoom = roomIndexAt(player.z);
+  G.state.setRoom(currentRoom);
+  winFired = false;
 }
 
 function refresh() {
@@ -210,7 +298,7 @@ function refresh() {
   }
 }
 
-function begin() {
+function begin(resumePose) {
   if (!ready) {
     try {
       init();
@@ -219,30 +307,50 @@ function begin() {
       return false;
     }
   }
-  reset();
+  reset(resumePose);
   running = true;
+  paused = false;
+  intro = true;
+  wasModal = false;
   resize();
-  updateOverlay();
+  syncUi(isModalOpen());
   return true;
 }
 
 function stop() {
   running = false;
+  paused = false;
+  intro = false;
   if (ready) {
     controls.setEnabled(false);
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
   }
-  byId('overlay').classList.add('hidden');
-  byId('prompt').classList.add('hidden');
+  ['overlay', 'pause', 'relock', 'prompt'].forEach(function (id) {
+    byId(id).classList.add('hidden');
+  });
 }
+
+document.addEventListener('keydown', function (event) {
+  if (event.code !== 'Escape' || !running || paused || isModalOpen()) {
+    return;
+  }
+  openPause();
+}, true);
+
+G.settings.subscribe(applySettings);
 
 G.view3d = {
   begin: begin,
   stop: stop,
   refresh: refresh,
+  resume: resume,
+  openPause: openPause,
   setPose: setPose,
+  isRunning: function () {
+    return running;
+  },
   pose: function () {
     return { x: player.x, z: player.z, yaw: controls.state.yaw, pitch: controls.state.pitch, room: currentRoom };
   },
@@ -251,5 +359,8 @@ G.view3d = {
   },
   doorOpenAmount: function (index) {
     return world.doorOpenAmount(index);
+  },
+  stats: function () {
+    return { fov: camera.fov, pixelRatio: renderer.getPixelRatio() };
   }
 };
