@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Logic Escape</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="app">
+    <section id="screen-start" class="screen">
+      <p class="tag">SISTEMA TRANCADO</p>
+      <h1>THE LOGIC ESCAPE</h1>
+      <p>Você acordou em um laboratório com o sistema operacional bloqueado. Cada sala é um nível de acesso, e cada trava só cede para quem raciocina com lógica matemática.</p>
+      <p>Clique nos objetos para investigar, guarde as pistas no caderno e resolva os enigmas para subir de nível. São 3 salas.</p>
+      <button id="btn-start" class="btn primary" type="button">Iniciar sistema</button>
+    </section>
+
+    <section id="screen-game" class="game hidden">
+      <header class="hud">
+        <div class="hud-title">
+          <span class="hud-logo">LOGIC_ESCAPE</span>
+          <span id="hud-room" class="hud-room"></span>
+        </div>
+        <div id="hud-progress" class="hud-progress" aria-label="Progresso das salas"></div>
+        <div class="hud-actions">
+          <button id="btn-notebook" class="btn" type="button">Caderno <span id="note-count" class="badge">0</span></button>
+          <button id="btn-hint" class="btn" type="button">Dica</button>
+        </div>
+      </header>
+      <div id="scene" class="scene"></div>
+    </section>
+
+    <section id="screen-end" class="screen hidden">
+      <p class="tag">ACESSO TOTAL CONCEDIDO</p>
+      <h1>VOCÊ ESCAPOU</h1>
+      <p>Os três níveis de acesso foram desbloqueados com dedução lógica.</p>
+      <div class="stats">
+        <div class="stat"><span class="stat-value" id="end-time">00:00</span><span class="stat-label">tempo</span></div>
+        <div class="stat"><span class="stat-value" id="end-attempts">0</span><span class="stat-label">tentativas</span></div>
+        <div class="stat"><span class="stat-value" id="end-hints">0</span><span class="stat-label">dicas usadas</span></div>
+      </div>
+      <button id="btn-restart" class="btn primary" type="button">Jogar novamente</button>
+    </section>
+  </main>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <header class="modal-head">
+        <h2 id="modal-title"></h2>
+        <button id="modal-close" class="modal-close" type="button" aria-label="Fechar">X</button>
+      </header>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/logic/evaluator.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/rooms/room1.js"></script>
+  <script src="js/rooms/room2.js"></script>
+  <script src="js/rooms/room3.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
