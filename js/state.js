@@ -62,6 +62,28 @@
     elapsedSeconds: function () {
       const end = current.finishedAt || Date.now();
       return Math.round((end - current.startedAt) / 1000);
+    },
+    serialize: function () {
+      return {
+        room: current.room,
+        solved: current.solved,
+        notes: current.notes,
+        hintIndex: current.hintIndex,
+        hintsUsed: current.hintsUsed,
+        attempts: current.attempts,
+        elapsed: this.elapsedSeconds()
+      };
+    },
+    load: function (data) {
+      const next = fresh();
+      next.room = Number(data.room) >= 1 && Number(data.room) <= 3 ? Number(data.room) : 1;
+      next.solved = data.solved && typeof data.solved === 'object' ? data.solved : {};
+      next.notes = Array.isArray(data.notes) ? data.notes : [];
+      next.hintIndex = data.hintIndex && typeof data.hintIndex === 'object' ? data.hintIndex : {};
+      next.hintsUsed = Number(data.hintsUsed) || 0;
+      next.attempts = Number(data.attempts) || 0;
+      next.startedAt = Date.now() - (Number(data.elapsed) || 0) * 1000;
+      current = next;
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);
