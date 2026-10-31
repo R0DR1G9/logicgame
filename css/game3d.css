@@ -1,0 +1,94 @@
+.stage {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 120px);
+  min-height: 380px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  background: #03060c;
+}
+
+.view {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border: 2px solid rgba(214, 228, 245, 0.7);
+  border-radius: 50%;
+  pointer-events: none;
+  transition: transform 0.12s, border-color 0.12s;
+}
+
+.crosshair.active {
+  border-color: var(--green);
+  transform: scale(1.7);
+}
+
+.prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  padding: 8px 16px;
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  background: rgba(6, 16, 28, 0.85);
+  color: var(--green);
+  letter-spacing: 0.06em;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(2, 5, 10, 0.72);
+  text-align: center;
+  cursor: pointer;
+}
+
+.overlay-title {
+  margin: 0;
+  color: var(--cyan);
+  font-size: 1.5rem;
+  letter-spacing: 0.16em;
+  text-shadow: 0 0 14px rgba(61, 224, 255, 0.5);
+}
+
+.overlay-keys {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px 18px;
+  margin: 0;
+  color: var(--muted);
+  text-align: left;
+}
+
+.overlay-keys dt {
+  color: var(--amber);
+}
+
+.overlay-keys dd {
+  margin: 0;
+}
+
+.overlay-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}

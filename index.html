@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Logic Escape</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/game3d.css">
+  <link rel="stylesheet" href="css/menu.css">
 </head>
 <body>
   <main class="app">
@@ -12,8 +14,13 @@
       <p class="tag">SISTEMA TRANCADO</p>
       <h1>THE LOGIC ESCAPE</h1>
       <p>Você acordou em um laboratório com o sistema operacional bloqueado. Cada sala é um nível de acesso, e cada trava só cede para quem raciocina com lógica matemática.</p>
-      <p>Clique nos objetos para investigar, guarde as pistas no caderno e resolva os enigmas para subir de nível. São 3 salas.</p>
-      <button id="btn-start" class="btn primary" type="button">Iniciar sistema</button>
+      <p>Ande em primeira pessoa, investigue os objetos, guarde as pistas no caderno e resolva os enigmas para abrir as portas. São 3 salas ligadas.</p>
+      <nav class="menu" aria-label="Menu principal">
+        <button id="btn-new" class="btn primary menu-btn" type="button">Novo jogo</button>
+        <button id="btn-continue" class="btn menu-btn" type="button">Continuar jogo</button>
+        <p id="continue-info" class="menu-info"></p>
+        <button id="btn-settings" class="btn menu-btn" type="button">Configurações</button>
+      </nav>
     </section>
 
     <section id="screen-game" class="game hidden">
@@ -26,9 +33,37 @@
         <div class="hud-actions">
           <button id="btn-notebook" class="btn" type="button">Caderno <span id="note-count" class="badge">0</span></button>
           <button id="btn-hint" class="btn" type="button">Dica</button>
+          <button id="btn-menu" class="btn" type="button">Menu</button>
         </div>
       </header>
-      <div id="scene" class="scene"></div>
+      <div id="stage" class="stage">
+        <canvas id="view" class="view"></canvas>
+        <div id="crosshair" class="crosshair"></div>
+        <div id="prompt" class="prompt hidden"></div>
+        <div id="overlay" class="overlay hidden">
+          <p class="overlay-title">CLIQUE PARA ENTRAR NA SALA</p>
+          <dl class="overlay-keys">
+            <dt>W A S D</dt><dd>andar</dd>
+            <dt>Mouse</dt><dd>olhar ao redor</dd>
+            <dt>E ou clique</dt><dd>interagir com o objeto mirado</dd>
+            <dt>Shift</dt><dd>correr</dd>
+            <dt>C</dt><dd>caderno de pistas</dd>
+            <dt>H</dt><dd>dica</dd>
+            <dt>Esc</dt><dd>pausar</dd>
+          </dl>
+          <p class="overlay-note">Se o mouse não for capturado, arraste com o botão pressionado para olhar.</p>
+        </div>
+        <div id="pause" class="pause hidden">
+          <p class="overlay-title">PAUSA</p>
+          <nav class="menu" aria-label="Menu de pausa">
+            <button id="btn-resume" class="btn primary menu-btn" type="button">Continuar</button>
+            <button id="btn-pause-settings" class="btn menu-btn" type="button">Configurações</button>
+            <button id="btn-quit" class="btn menu-btn" type="button">Sair para o menu</button>
+          </nav>
+          <p class="overlay-note">O progresso é salvo automaticamente.</p>
+        </div>
+        <div id="relock" class="relock hidden">Clique na tela para capturar o mouse</div>
+      </div>
     </section>
 
     <section id="screen-end" class="screen hidden">
@@ -40,7 +75,10 @@
         <div class="stat"><span class="stat-value" id="end-attempts">0</span><span class="stat-label">tentativas</span></div>
         <div class="stat"><span class="stat-value" id="end-hints">0</span><span class="stat-label">dicas usadas</span></div>
       </div>
-      <button id="btn-restart" class="btn primary" type="button">Jogar novamente</button>
+      <nav class="menu" aria-label="Fim de jogo">
+        <button id="btn-restart" class="btn primary menu-btn" type="button">Jogar novamente</button>
+        <button id="btn-end-menu" class="btn menu-btn" type="button">Menu principal</button>
+      </nav>
     </section>
   </main>
 
@@ -59,10 +97,13 @@
   <script src="js/config.js"></script>
   <script src="js/logic/evaluator.js"></script>
   <script src="js/state.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/save.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/rooms/room1.js"></script>
   <script src="js/rooms/room2.js"></script>
   <script src="js/rooms/room3.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/flow.js"></script>
+  <script type="module" src="js/game3d/view3d.js"></script>
 </body>
 </html>

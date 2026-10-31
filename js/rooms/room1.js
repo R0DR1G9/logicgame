@@ -232,6 +232,12 @@
   G.rooms[1] = {
     title: 'Terminal de Energia',
     build: build,
-    hints: hints
+    hints: hints,
+    actions: {
+      note: openWallNote,
+      board: openBoard,
+      panel: openPanel,
+      terminal: openTerminal
+    }
   };
 })(typeof window !== 'undefined' ? window : globalThis);
