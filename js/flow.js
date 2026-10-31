@@ -2,6 +2,7 @@
   const G = (root.LogicGame = root.LogicGame || {});
   const ui = G.ui;
   const dom = {};
+  const AUTOSAVE_MS = 5000;
 
   function byId(id) {
     return document.getElementById(id);
@@ -41,38 +42,101 @@
     if (G.view3d) {
       G.view3d.refresh();
     }
+    G.save.write();
   }
 
   function collect(id, roomId, title, text) {
     if (G.state.addNote(id, roomId, title, text)) {
       updateHud();
       ui.toast('Pista guardada no caderno.', 'info');
+      G.save.write();
     }
+  }
+
+  function showScreen(name) {
+    dom.start.classList.toggle('hidden', name !== 'start');
+    dom.game.classList.toggle('hidden', name !== 'game');
+    dom.end.classList.toggle('hidden', name !== 'end');
+  }
+
+  function refreshMenu() {
+    const data = G.save.read();
+    dom.continueBtn.disabled = !data;
+    if (data) {
+      const room = Number(data.state.room) || 1;
+      dom.continueInfo.textContent = 'Nível ' + room + '/' + G.config.totalRooms + ' - ' + formatTime(Number(data.state.elapsed) || 0);
+    } else {
+      dom.continueInfo.textContent = 'Nenhum jogo salvo';
+    }
+  }
+
+  function enter(pose) {
+    ui.closeModal();
+    showScreen('game');
+    if (!G.view3d || !G.view3d.begin(pose)) {
+      showScreen('start');
+      refreshMenu();
+      return;
+    }
+    updateHud();
+  }
+
+  function startNew() {
+    G.save.clear();
+    G.state.reset();
+    enter(null);
+  }
+
+  function askNewGame() {
+    if (!G.save.exists()) {
+      startNew();
+      return;
+    }
+    const body = ui.el('div', 'stack');
+    const actions = ui.el('div', 'confirm-actions');
+    ui.append(
+      actions,
+      ui.button('Cancelar', 'btn', ui.closeModal),
+      ui.button('Apagar e começar', 'btn primary', startNew)
+    );
+    ui.append(
+      body,
+      ui.el('p', 'modal-text', 'Começar um novo jogo apaga o progresso salvo. Deseja continuar?'),
+      actions
+    );
+    ui.openModal('Novo jogo', body);
+  }
+
+  function continueGame() {
+    const data = G.save.read();
+    if (!data) {
+      refreshMenu();
+      return;
+    }
+    G.state.load(data.state);
+    enter(data.pose);
+  }
+
+  function toMenu() {
+    G.save.write();
+    if (G.view3d) {
+      G.view3d.stop();
+    }
+    ui.closeModal();
+    showScreen('start');
+    refreshMenu();
   }
 
   function win() {
     G.state.finish();
     G.view3d.stop();
+    G.save.clear();
     ui.closeModal();
     const current = G.state.get();
     dom.endTime.textContent = formatTime(G.state.elapsedSeconds());
     dom.endAttempts.textContent = String(current.attempts);
     dom.endHints.textContent = String(current.hintsUsed);
-    dom.game.classList.add('hidden');
-    dom.end.classList.remove('hidden');
-  }
-
-  function start() {
-    G.state.reset();
-    dom.start.classList.add('hidden');
-    dom.end.classList.add('hidden');
-    dom.game.classList.remove('hidden');
-    if (!G.view3d || !G.view3d.begin()) {
-      dom.game.classList.add('hidden');
-      dom.start.classList.remove('hidden');
-      return;
-    }
-    updateHud();
+    showScreen('end');
   }
 
   function showNotebook() {
@@ -98,6 +162,7 @@
     const info = G.rooms[current.room].hints();
     const text = G.state.nextHint(info.stage, info.list);
     ui.openModal('Dica', ui.el('p', 'modal-text', text));
+    G.save.write();
   }
 
   function init() {
@@ -110,20 +175,44 @@
     dom.endTime = byId('end-time');
     dom.endAttempts = byId('end-attempts');
     dom.endHints = byId('end-hints');
+    dom.continueBtn = byId('btn-continue');
+    dom.continueInfo = byId('continue-info');
 
     ui.initModal();
     buildProgress();
+    refreshMenu();
 
-    byId('btn-start').addEventListener('click', start);
-    byId('btn-restart').addEventListener('click', start);
+    byId('btn-new').addEventListener('click', askNewGame);
+    dom.continueBtn.addEventListener('click', continueGame);
+    byId('btn-settings').addEventListener('click', G.settings.open);
+    byId('btn-restart').addEventListener('click', startNew);
+    byId('btn-end-menu').addEventListener('click', toMenu);
     byId('btn-notebook').addEventListener('click', showNotebook);
     byId('btn-hint').addEventListener('click', showHint);
+    byId('btn-menu').addEventListener('click', function () {
+      G.view3d.openPause();
+    });
+    byId('btn-resume').addEventListener('click', function () {
+      G.view3d.resume();
+    });
+    byId('btn-pause-settings').addEventListener('click', G.settings.open);
+    byId('btn-quit').addEventListener('click', toMenu);
+
+    root.setInterval(G.save.write, AUTOSAVE_MS);
+    root.addEventListener('pagehide', G.save.write);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        G.save.write();
+      }
+    });
   }
 
   G.main = {
     render: render,
     updateHud: updateHud,
     collect: collect,
+    showNotebook: showNotebook,
+    showHint: showHint,
     win: win
   };
 

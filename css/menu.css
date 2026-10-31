@@ -1,0 +1,97 @@
+.menu {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: min(320px, 100%);
+}
+
+.menu-btn {
+  padding: 12px 18px;
+  font-size: 1rem;
+}
+
+.menu-btn:disabled {
+  border-color: var(--line);
+  color: var(--muted);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.menu-btn:disabled:hover {
+  background: transparent;
+}
+
+.menu-info {
+  margin: -4px 0 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.pause {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(2, 5, 10, 0.86);
+  text-align: center;
+}
+
+.relock {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 3;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(6, 16, 28, 0.82);
+  color: var(--muted);
+  font-size: 0.8rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.setting-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.setting-name {
+  color: var(--text);
+}
+
+.setting-input {
+  width: 100%;
+  accent-color: var(--cyan);
+}
+
+.setting-value {
+  min-width: 48px;
+  color: var(--amber);
+  text-align: right;
+}
+
+.setting-select {
+  grid-column: 2 / 4;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #0a1424;
+  color: var(--text);
+  font-family: inherit;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
