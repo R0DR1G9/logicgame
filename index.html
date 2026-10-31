@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Logic Escape</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/game3d.css">
 </head>
 <body>
   <main class="app">
@@ -12,7 +13,7 @@
       <p class="tag">SISTEMA TRANCADO</p>
       <h1>THE LOGIC ESCAPE</h1>
       <p>Você acordou em um laboratório com o sistema operacional bloqueado. Cada sala é um nível de acesso, e cada trava só cede para quem raciocina com lógica matemática.</p>
-      <p>Clique nos objetos para investigar, guarde as pistas no caderno e resolva os enigmas para subir de nível. São 3 salas.</p>
+      <p>Ande em primeira pessoa, investigue os objetos, guarde as pistas no caderno e resolva os enigmas para abrir as portas. São 3 salas ligadas.</p>
       <button id="btn-start" class="btn primary" type="button">Iniciar sistema</button>
     </section>
 
@@ -28,7 +29,22 @@
           <button id="btn-hint" class="btn" type="button">Dica</button>
         </div>
       </header>
-      <div id="scene" class="scene"></div>
+      <div id="stage" class="stage">
+        <canvas id="view" class="view"></canvas>
+        <div id="crosshair" class="crosshair"></div>
+        <div id="prompt" class="prompt hidden"></div>
+        <div id="overlay" class="overlay hidden">
+          <p class="overlay-title">CLIQUE PARA ENTRAR NA SALA</p>
+          <dl class="overlay-keys">
+            <dt>W A S D</dt><dd>andar</dd>
+            <dt>Mouse</dt><dd>olhar ao redor</dd>
+            <dt>E ou clique</dt><dd>interagir com o objeto mirado</dd>
+            <dt>Shift</dt><dd>correr</dd>
+            <dt>Esc</dt><dd>liberar o mouse</dd>
+          </dl>
+          <p class="overlay-note">Se o mouse não for capturado, arraste com o botão pressionado para olhar.</p>
+        </div>
+      </div>
     </section>
 
     <section id="screen-end" class="screen hidden">
@@ -63,6 +79,7 @@
   <script src="js/rooms/room1.js"></script>
   <script src="js/rooms/room2.js"></script>
   <script src="js/rooms/room3.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/flow.js"></script>
+  <script type="module" src="js/game3d/view3d.js"></script>
 </body>
 </html>
