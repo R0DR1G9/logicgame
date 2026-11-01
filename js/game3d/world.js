@@ -6,12 +6,13 @@ import {
 import * as tex from './textures.js';
 import { surface } from './materials.js';
 import { createKit } from './kit.js';
+import { buildRoom2 } from './room2.js';
 import { addGlow, addBlob, addEdgeShade, createDust } from './effects.js';
 
 const ACCENTS = [0x3de0ff, 0xffb347, 0x4dff9a];
 const ACCENT_CSS = ['#3de0ff', '#ffb347', '#4dff9a'];
 const WALL_BODY = [0x1c2b47, 0x2c2340, 0x173631];
-const WALL_TINTS = [0x8fa8d6, 0xa592d6, 0x86c4ad];
+const WALL_TINTS = [0x8fa8d6, 0x7a6cae, 0x6fae98];
 const FLOOR_TINTS = [0xc9d3e6, 0xd9cbf0, 0xc6eadb];
 const DOOR_LABELS = ['NÍVEL 2', 'NÍVEL 3', 'SAÍDA'];
 const SOLID_LIGHT = 52;
@@ -248,6 +249,8 @@ export function buildWorld() {
     addBlob(scene, rack.x, rack.z, rack.w + 0.7, rack.d + 0.7, 0.55);
   });
 
+  const room2Part = buildRoom2({ scene: scene, kit: kit, tag: tag, frameMat: frameMat, pipeMat: pipeMat, pickables: pickables });
+
   const doorStates = doors.map(function (door, i) {
     const group = new THREE.Group();
     const zc = door.zFar + WALL / 2;
@@ -315,7 +318,7 @@ export function buildWorld() {
     };
   });
 
-  [1, 2].forEach(function (index) {
+  [2].forEach(function (index) {
     const room = rooms[index];
     const cz = (room.zMin + room.zMax) / 2;
     kit.sign(tex.signTexture(['NÍVEL DE ACESSO ' + (index + 1), 'sala em construção'], ACCENT_CSS[index]), 2.6, 1.2, -HALF + 0.02, 1.8, cz, Math.PI / 2);
@@ -377,6 +380,7 @@ export function buildWorld() {
     screenGlow.material.color.setHex(mode === 'done' ? 0x4dff9a : 0x3de0ff);
     screenGlow.material.opacity = mode === 'off' ? 0 : 0.22;
 
+    room2Part.apply(status, instant);
     const unlocked = [status.table, status.safe, status.lock];
     const opened = [];
     doorStates.forEach(function (state, i) {
@@ -428,6 +432,7 @@ export function buildWorld() {
       led.mat.emissiveIntensity = 0.1 + level * (on ? 2 : 0.35);
     });
     dust.update(clock, dt);
+    room2Part.update(dt, clock);
   }
 
   function setQuality(quality) {
