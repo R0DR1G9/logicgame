@@ -1,6 +1,12 @@
 import * as THREE from '../../vendor/three.module.min.js';
 
-const MONO = '"Cascadia Code", "DejaVu Sans Mono", Consolas, "Courier New", monospace';
+const MONO = '"Share Tech Mono", "Cascadia Code", "DejaVu Sans Mono", Consolas, "Courier New", monospace';
+
+try {
+  await document.fonts.load('16px "Share Tech Mono"');
+} catch (error) {
+  document.fonts.ready.catch(function () {});
+}
 
 function make(width, height, draw) {
   const canvas = document.createElement('canvas');
@@ -171,6 +177,48 @@ export function screenTexture() {
   }
   draw('off');
   return { texture: made.texture, set: draw };
+}
+
+export function rackTexture() {
+  return make(256, 512, function (ctx, w, h) {
+    ctx.fillStyle = '#0c111b';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#2a3550';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(3, 3, w - 6, h - 6);
+    for (let i = 0; i < 8; i++) {
+      const y = 14 + i * 61;
+      ctx.fillStyle = '#131b2b';
+      ctx.fillRect(14, y, w - 28, 52);
+      ctx.strokeStyle = '#2e3b58';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(14, y, w - 28, 52);
+      ctx.fillStyle = '#05080e';
+      for (let s = 0; s < 6; s++) {
+        ctx.fillRect(26, y + 10 + s * 6, w - 120, 3);
+      }
+      ctx.fillStyle = '#0a2230';
+      ctx.fillRect(w - 80, y + 12, 52, 28);
+    }
+  }).texture;
+}
+
+export function keypadTexture() {
+  return make(128, 192, function (ctx, w, h) {
+    ctx.fillStyle = '#0c111b';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#3de0ff';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(2, 2, w - 4, h - 4);
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 3; c++) {
+        ctx.fillStyle = '#1b2840';
+        ctx.fillRect(14 + c * 34, 76 + r * 26, 28, 20);
+        ctx.fillStyle = '#3de0ff';
+        ctx.fillRect(24 + c * 34, 84 + r * 26, 8, 4);
+      }
+    }
+  }).texture;
 }
 
 export function labelTexture(text, color) {
