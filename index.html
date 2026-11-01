@@ -4,15 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Logic Escape</title>
+  <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/game3d.css">
   <link rel="stylesheet" href="css/menu.css">
 </head>
 <body>
   <main class="app">
-    <section id="screen-start" class="screen">
+    <section id="screen-start" class="screen screen-menu">
+      <div class="backdrop" aria-hidden="true">
+        <span class="sym">&and;</span>
+        <span class="sym">&or;</span>
+        <span class="sym">&not;</span>
+        <span class="sym">&rarr;</span>
+        <span class="sym">&forall;</span>
+        <span class="sym">&exist;</span>
+        <span class="sym">&there4;</span>
+        <span class="sym">&equiv;</span>
+        <span class="sym">&isin;</span>
+        <span class="sym">&harr;</span>
+        <span class="sym">&cup;</span>
+        <span class="sym">&cap;</span>
+      </div>
       <p class="tag">SISTEMA TRANCADO</p>
-      <h1>THE LOGIC ESCAPE</h1>
+      <h1 class="title" data-text="THE LOGIC ESCAPE">THE LOGIC ESCAPE</h1>
       <p>Você acordou em um laboratório com o sistema operacional bloqueado. Cada sala é um nível de acesso, e cada trava só cede para quem raciocina com lógica matemática.</p>
       <p>Ande em primeira pessoa, investigue os objetos, guarde as pistas no caderno e resolva os enigmas para abrir as portas. São 3 salas ligadas.</p>
       <nav class="menu" aria-label="Menu principal">
@@ -39,7 +54,7 @@
       <div id="stage" class="stage">
         <canvas id="view" class="view"></canvas>
         <div id="crosshair" class="crosshair"></div>
-        <div id="prompt" class="prompt hidden"></div>
+        <div id="prompt" class="prompt hidden"><kbd class="keycap">E</kbd><span id="prompt-label"></span></div>
         <div id="overlay" class="overlay hidden">
           <p class="overlay-title">CLIQUE PARA ENTRAR NA SALA</p>
           <dl class="overlay-keys">
