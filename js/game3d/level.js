@@ -51,6 +51,16 @@ export const room1 = {
   ]
 };
 
+export const room2 = {
+  board: { x: -HALF + 0.02, y: 1.85, z: -10.8, w: 2.4, h: 1.4 },
+  suspects: { x: HALF - 0.02, y: 1.85, z: -10.8, w: 2.4, h: 1.4 },
+  desk: { x: -3.45, z: -14.2, w: 0.8, d: 1.8, h: 0.8 },
+  chair: { x: -2.45, z: -14.2, w: 0.5, d: 0.5 },
+  safe: { x: 3.7, z: -13.4, w: 0.6, d: 1.0, h: 1.4 },
+  cabinet: { x: 3.55, z: -9.5, w: 0.8, d: 0.9, h: 1.6 },
+  crate: { x: 3.3, z: -15.7, w: 0.9, d: 0.9, h: 0.9 }
+};
+
 function box(xMin, xMax, zMin, zMax, id) {
   return { id: id, xMin: xMin, xMax: xMax, zMin: zMin, zMax: zMax, disabled: false };
 }
@@ -84,6 +94,12 @@ export function buildColliders() {
   room1.racks.forEach(function (rack, i) {
     list.push(centered(rack.x, rack.z, rack.w, rack.d, 'rack' + i));
   });
+
+  list.push(centered(room2.desk.x, room2.desk.z, room2.desk.w, room2.desk.d, 'desk2'));
+  list.push(centered(room2.chair.x, room2.chair.z, room2.chair.w, room2.chair.d, 'chair2'));
+  list.push(centered(3.5, room2.safe.z, 1.0, 1.1, 'safe'));
+  list.push(centered(room2.cabinet.x, room2.cabinet.z, room2.cabinet.w, room2.cabinet.d, 'cabinet'));
+  list.push(centered(room2.crate.x, room2.crate.z, room2.crate.w, room2.crate.d, 'crate'));
 
   return list;
 }

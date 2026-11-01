@@ -73,7 +73,26 @@ export function createKit(scene, pickables) {
     return mesh;
   }
 
+  function chair(x, z, dirX, dirZ) {
+    const mat = material(0x1a2338, { metalness: 0.3, roughness: 0.7 });
+    const metal = material(0x3a4660, { metalness: 0.7, roughness: 0.4 });
+    const o = { pick: false };
+    box(0.46, 0.07, 0.46, mat, x, 0.48, z, undefined, o);
+    if (dirZ !== 0) {
+      box(0.44, 0.5, 0.06, mat, x, 0.8, z + dirZ * 0.22, undefined, o);
+    } else {
+      box(0.06, 0.5, 0.44, mat, x + dirX * 0.22, 0.8, z, undefined, o);
+    }
+    cylinder(0.035, 0.035, 0.4, metal, x, 0.25, z);
+    for (let k = 0; k < 5; k++) {
+      const leg = box(0.34, 0.03, 0.05, metal, x, 0.06, z, undefined, o);
+      leg.rotation.y = k * (Math.PI * 2 / 5) + 0.3;
+      leg.translateX(0.12);
+    }
+  }
+
   return {
+    chair: chair,
     material: material,
     box: box,
     cylinder: cylinder,

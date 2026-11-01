@@ -242,3 +242,158 @@ export function signTexture(lines, color) {
     center(ctx, lines[1], w / 2, 270, '#d6e4f5');
   }).texture;
 }
+
+export function rulesTexture() {
+  return make(1200, 700, function (ctx, w, h) {
+    ctx.fillStyle = '#16102a';
+    ctx.fillRect(0, 0, w, h);
+    frame(ctx, w, h, '#ffb347', 10);
+    font(ctx, 54);
+    center(ctx, 'REGRAS DE INFERÊNCIA', w / 2, 80, '#ffb347');
+    const rules = [
+      ['MODUS PONENS', 'P → Q     P', '∴ Q'],
+      ['MODUS TOLLENS', 'P → Q     ¬Q', '∴ ¬P'],
+      ['SILOGISMO DISJUNTIVO', 'P ∨ Q     ¬P', '∴ Q']
+    ];
+    rules.forEach(function (rule, i) {
+      const y = 215 + i * 160;
+      font(ctx, 38);
+      ctx.fillStyle = '#ffb347';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(rule[0], 80, y - 34);
+      font(ctx, 54, 'normal');
+      ctx.fillStyle = '#d6e4f5';
+      ctx.fillText(rule[1], 80, y + 26);
+      ctx.fillStyle = '#4dff9a';
+      ctx.fillText(rule[2], 780, y + 26);
+      ctx.fillStyle = 'rgba(255,179,71,0.3)';
+      ctx.fillRect(80, y + 72, w - 160, 2);
+    });
+  }).texture;
+}
+
+export function suspectsTexture() {
+  return make(1200, 700, function (ctx, w, h) {
+    ctx.fillStyle = '#1b1510';
+    ctx.fillRect(0, 0, w, h);
+    frame(ctx, w, h, '#ff5c7a', 10);
+    font(ctx, 52);
+    center(ctx, 'SUSPEITOS', w / 2, 70, '#ff5c7a');
+    const letters = ['A', 'B', 'C', 'D'];
+    const pins = [];
+    letters.forEach(function (letter, i) {
+      const x = 70 + i * 275;
+      const y = 140 + (i % 2) * 36;
+      pins.push([x + 105, y + 14]);
+      ctx.fillStyle = '#d9d2bc';
+      ctx.fillRect(x, y, 210, 400);
+      ctx.fillStyle = '#2a2f3d';
+      ctx.beginPath();
+      ctx.arc(x + 105, y + 150, 58, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x + 105, y + 290, 92, 70, 0, Math.PI, 0);
+      ctx.fill();
+      font(ctx, 70);
+      center(ctx, letter, x + 105, y + 345, '#1a1a1a');
+      font(ctx, 26, 'normal');
+      center(ctx, 'SUSPEITO ' + (i + 1), x + 105, y + 382, '#4a4a4a');
+    });
+    ctx.strokeStyle = 'rgba(255,92,122,0.85)';
+    ctx.lineWidth = 4;
+    [[0, 1], [1, 2], [2, 3], [0, 2]].forEach(function (pair) {
+      ctx.beginPath();
+      ctx.moveTo(pins[pair[0]][0], pins[pair[0]][1]);
+      ctx.lineTo(pins[pair[1]][0], pins[pair[1]][1]);
+      ctx.stroke();
+    });
+    pins.forEach(function (pin) {
+      ctx.fillStyle = '#ff5c7a';
+      ctx.beginPath();
+      ctx.arc(pin[0], pin[1], 11, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }).texture;
+}
+
+export function diaryTexture() {
+  return make(512, 340, function (ctx, w, h) {
+    ctx.fillStyle = '#1a140e';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#e8dfc4';
+    ctx.fillRect(10, 10, 240, h - 20);
+    ctx.fillRect(262, 10, 240, h - 20);
+    ctx.fillStyle = '#b8ad8c';
+    ctx.fillRect(250, 10, 12, h - 20);
+    font(ctx, 24);
+    center(ctx, 'DIÁRIO', 130, 42, '#3a2f1f');
+    center(ctx, 'PÁG. 1 A 4', 382, 42, '#3a2f1f');
+    ctx.strokeStyle = '#8f8467';
+    ctx.lineWidth = 3;
+    [[20, 240], [272, 492]].forEach(function (span) {
+      for (let y = 76; y < h - 24; y += 24) {
+        ctx.beginPath();
+        ctx.moveTo(span[0] + 8, y);
+        ctx.lineTo(span[0] + 8 + (span[1] - span[0] - 16) * (0.55 + ((y * 7) % 40) / 100), y);
+        ctx.stroke();
+      }
+    });
+    ctx.fillStyle = '#1a140e';
+    ctx.beginPath();
+    ctx.moveTo(262, 10);
+    for (let y = 10; y <= h - 10; y += 18) {
+      ctx.lineTo(262 + (y % 36 === 10 ? 10 : 2), y);
+    }
+    ctx.lineTo(262, h - 10);
+    ctx.closePath();
+    ctx.fill();
+  }).texture;
+}
+
+export function safeTexture() {
+  const made = make(400, 440, function () {});
+  function draw(open) {
+    made.redraw(function (ctx, w, h) {
+      const g = ctx.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, '#46526b');
+      g.addColorStop(1, '#1d2433');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      frame(ctx, w, h, '#2a3347', 14);
+      ctx.fillStyle = '#050a10';
+      ctx.fillRect(60, 40, 280, 70);
+      font(ctx, 40);
+      center(ctx, open ? 'ABERTO' : 'TRANCADO', w / 2, 75, open ? '#4dff9a' : '#ff5c7a');
+      ctx.fillStyle = '#232c3d';
+      ctx.beginPath();
+      ctx.arc(200, 265, 118, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#8d9bb5';
+      ctx.lineWidth = 10;
+      ctx.stroke();
+      ctx.lineWidth = 3;
+      for (let k = 0; k < 36; k++) {
+        const a = k * Math.PI / 18;
+        const r1 = k % 3 === 0 ? 88 : 98;
+        ctx.beginPath();
+        ctx.moveTo(200 + Math.cos(a) * r1, 265 + Math.sin(a) * r1);
+        ctx.lineTo(200 + Math.cos(a) * 108, 265 + Math.sin(a) * 108);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#aab6cc';
+      ctx.beginPath();
+      ctx.arc(200, 265, 38, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff5c7a';
+      ctx.beginPath();
+      ctx.moveTo(200, 130);
+      ctx.lineTo(188, 112);
+      ctx.lineTo(212, 112);
+      ctx.closePath();
+      ctx.fill();
+    });
+  }
+  draw(false);
+  return { texture: made.texture, set: draw };
+}
