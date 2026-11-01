@@ -31,6 +31,8 @@ let raycaster = null;
 let target = null;
 let currentRoom = 1;
 let winFired = false;
+let bobPhase = 0;
+let bobAmount = 0;
 let lastTime = 0;
 const player = { x: spawn.x, z: spawn.z };
 
@@ -68,6 +70,7 @@ function applySettings() {
   const settings = G.settings.get();
   camera.fov = settings.fov;
   renderer.setPixelRatio(pixelRatioFor(settings.quality));
+  world.setQuality(settings.quality);
   resize();
 }
 
@@ -140,7 +143,7 @@ function interact() {
 }
 
 function placeCamera() {
-  camera.position.set(player.x, EYE, player.z);
+  camera.position.set(player.x, EYE + Math.sin(bobPhase) * 0.022 * bobAmount, player.z);
   camera.rotation.y = controls.state.yaw;
   camera.rotation.x = controls.state.pitch;
 }
@@ -195,7 +198,7 @@ function updateTarget(modalOpen) {
   const prompt = byId('prompt');
   prompt.classList.toggle('hidden', !info || modalOpen || paused || intro);
   if (info) {
-    prompt.textContent = '[E] ' + info.label;
+    byId('prompt-label').textContent = info.label;
   }
   byId('crosshair').classList.toggle('active', Boolean(info) && !paused);
 }
@@ -229,7 +232,14 @@ function frame(now) {
   }
   wasModal = modalOpen;
   if (!modalOpen && !paused && !intro) {
+    const beforeX = player.x;
+    const beforeZ = player.z;
     step(dt);
+    const moved = Math.hypot(player.x - beforeX, player.z - beforeZ);
+    bobPhase += moved * 2.6;
+    bobAmount += ((moved > 0.0005 ? 1 : 0) - bobAmount) * Math.min(1, dt * 8);
+  } else {
+    bobAmount *= 0.9;
   }
   world.update(dt);
   updateRoom();
@@ -246,9 +256,14 @@ function init() {
   const settings = G.settings.get();
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
   renderer.setPixelRatio(pixelRatioFor(settings.quality));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   camera = new THREE.PerspectiveCamera(settings.fov, 1, 0.05, 80);
   camera.rotation.order = 'YXZ';
   world = buildWorld();
+  world.setQuality(settings.quality);
   raycaster = new THREE.Raycaster();
   raycaster.far = REACH;
   controls = createControls(stage, canvas, {

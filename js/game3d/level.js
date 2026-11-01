@@ -44,6 +44,7 @@ export const room1 = {
   board: { x: -HALF + 0.02, y: 1.85, z: -5.2, w: 2.4, h: 1.4 },
   panel: { x: HALF - 0.15, y: 1.5, z: -3.2, d: 0.3, w: 1.1, h: 1.5 },
   desk: { x: 2.4, z: -7.5, w: 1.8, d: 0.8, h: 0.8 },
+  chair: { x: 2.35, z: -6.35, w: 0.5, d: 0.5 },
   racks: [
     { x: 3.55, z: -5.4, w: 0.8, d: 0.8, h: 2.0 },
     { x: 3.55, z: -6.3, w: 0.8, d: 0.8, h: 2.0 }
@@ -78,6 +79,8 @@ export function buildColliders() {
   list.push(centered(p.x, p.z, p.d, p.w, 'panel'));
   const d = room1.desk;
   list.push(centered(d.x, d.z, d.w, d.d, 'desk'));
+  const chair = room1.chair;
+  list.push(centered(chair.x, chair.z, chair.w, chair.d, 'chair'));
   room1.racks.forEach(function (rack, i) {
     list.push(centered(rack.x, rack.z, rack.w, rack.d, 'rack' + i));
   });
