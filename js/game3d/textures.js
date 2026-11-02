@@ -397,3 +397,116 @@ export function safeTexture() {
   draw(false);
   return { texture: made.texture, set: draw };
 }
+
+export function serverScreenTexture() {
+  return make(1200, 700, function (ctx, w, h) {
+    ctx.fillStyle = '#04141c';
+    ctx.fillRect(0, 0, w, h);
+    frame(ctx, w, h, '#4dff9a', 10);
+    font(ctx, 54);
+    center(ctx, 'SERVIDOR CENTRAL', w / 2, 80, '#4dff9a');
+    font(ctx, 34, 'normal');
+    center(ctx, 'CONDIÇÃO DE EXCLUSÃO', w / 2, 190, '#7f95b3');
+    font(ctx, 54);
+    center(ctx, '∃x (x ∈ ℕ ∧ x é par ∧ x² < 50)', w / 2, 300, '#ffb347');
+    font(ctx, 34, 'normal');
+    center(ctx, 'apenas arquivos que satisfazem', w / 2, 410, '#d6e4f5');
+    center(ctx, 'as três condições ao mesmo tempo', w / 2, 460, '#d6e4f5');
+    for (let i = 0; i < 24; i++) {
+      const bar = 20 + ((i * 37) % 70);
+      ctx.fillStyle = i % 5 === 0 ? '#ffb347' : '#1f6b52';
+      ctx.fillRect(80 + i * 44, 640 - bar, 30, bar);
+    }
+  }).texture;
+}
+
+export function manualTexture() {
+  return make(512, 340, function (ctx, w, h) {
+    ctx.fillStyle = '#10161f';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#dfe8dc';
+    ctx.fillRect(10, 10, 240, h - 20);
+    ctx.fillRect(262, 10, 240, h - 20);
+    ctx.fillStyle = '#a9b8a8';
+    ctx.fillRect(250, 10, 12, h - 20);
+    font(ctx, 20);
+    center(ctx, 'MANUAL DE', 130, 36, '#1f3a2e');
+    center(ctx, 'QUANTIFICADORES', 130, 60, '#1f3a2e');
+    center(ctx, 'REGRAS', 382, 42, '#1f3a2e');
+    font(ctx, 34);
+    center(ctx, '∃x P(x)', 130, 130, '#2a6a4a');
+    center(ctx, '∀x P(x)', 130, 220, '#8a4a1c');
+    font(ctx, 18, 'normal');
+    center(ctx, 'basta um elemento', 130, 165, '#3a3a3a');
+    center(ctx, 'todos precisam', 130, 255, '#3a3a3a');
+    center(ctx, 'um contraexemplo derruba', 382, 120, '#3a3a3a');
+    font(ctx, 28);
+    center(ctx, '¬∀x P(x)', 382, 190, '#1f3a2e');
+    center(ctx, '≡', 382, 225, '#1f3a2e');
+    center(ctx, '∃x ¬P(x)', 382, 260, '#1f3a2e');
+  }).texture;
+}
+
+export function filesTexture() {
+  const made = make(512, 300, function () {});
+  const numbers = [-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
+  function draw(done) {
+    const start = (window.LogicGame && window.LogicGame.config && window.LogicGame.config.naturalsStart) || 0;
+    made.redraw(function (ctx, w, h) {
+      ctx.fillStyle = '#04141c';
+      ctx.fillRect(0, 0, w, h);
+      frame(ctx, w, h, done ? '#4dff9a' : '#3de0ff', 6);
+      font(ctx, 22);
+      center(ctx, 'TERMINAL DE ARQUIVOS', w / 2, 30, '#3de0ff');
+      numbers.forEach(function (n, i) {
+        const x = 24 + (i % 6) * 80;
+        const y = 66 + Math.floor(i / 6) * 84;
+        const gone = done && n >= start && n % 2 === 0 && n * n < 50;
+        ctx.fillStyle = gone ? '#0a0f16' : '#0b2a3a';
+        ctx.fillRect(x, y, 70, 70);
+        ctx.strokeStyle = gone ? '#3a2030' : '#3de0ff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, 70, 70);
+        font(ctx, 28);
+        center(ctx, gone ? 'x' : String(n), x + 35, y + 30, gone ? '#ff5c7a' : '#d6e4f5');
+        font(ctx, 14, 'normal');
+        center(ctx, gone ? 'removido' : '.dat', x + 35, y + 56, '#7f95b3');
+      });
+      font(ctx, 20, 'normal');
+      center(ctx, done ? 'EXCLUSÃO CONCLUÍDA' : '[E] ou clique para abrir', w / 2, 262, done ? '#4dff9a' : '#7f95b3');
+    });
+  }
+  draw(false);
+  return { texture: made.texture, set: draw };
+}
+
+export function coverTexture() {
+  return make(360, 400, function (ctx, w, h) {
+    ctx.fillStyle = '#10141c';
+    ctx.fillRect(0, 0, w, h);
+    [0, h - 70].forEach(function (y) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, y, w, 70);
+      ctx.clip();
+      ctx.fillStyle = '#e8b422';
+      ctx.fillRect(0, y, w, 70);
+      ctx.fillStyle = '#16181d';
+      for (let x = -80; x < w + 80; x += 56) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + 70);
+        ctx.lineTo(x + 28, y + 70);
+        ctx.lineTo(x + 28 + 70, y);
+        ctx.lineTo(x + 70, y);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+    font(ctx, 42);
+    center(ctx, 'ACESSO', w / 2, 160, '#ff5c7a');
+    center(ctx, 'BLOQUEADO', w / 2, 215, '#ff5c7a');
+    font(ctx, 20, 'normal');
+    center(ctx, 'exclua os arquivos', w / 2, 262, '#7f95b3');
+  }).texture;
+}

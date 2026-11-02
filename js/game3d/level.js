@@ -61,6 +61,17 @@ export const room2 = {
   crate: { x: 3.3, z: -15.7, w: 0.9, d: 0.9, h: 0.9 }
 };
 
+export const room3 = {
+  screen: { x: HALF - 0.02, y: 1.85, z: -18.9, w: 2.4, h: 1.4 },
+  racks: [-18.2, -19.05, -19.9, -20.75, -21.6].map(function (z) {
+    return { x: -3.55, z: z, w: 0.8, d: 0.8, h: 2.0 };
+  }),
+  lectern: { x: -3.3, z: -23.4, w: 0.7, d: 0.6, h: 1.0 },
+  desk: { x: 2.4, z: -24.3, w: 1.8, d: 0.8, h: 0.8 },
+  chair: { x: 2.4, z: -23.2, w: 0.5, d: 0.5 },
+  lock: { y: 1.4, z: -22.2 }
+};
+
 function box(xMin, xMax, zMin, zMax, id) {
   return { id: id, xMin: xMin, xMax: xMax, zMin: zMin, zMax: zMax, disabled: false };
 }
@@ -100,6 +111,13 @@ export function buildColliders() {
   list.push(centered(3.5, room2.safe.z, 1.0, 1.1, 'safe'));
   list.push(centered(room2.cabinet.x, room2.cabinet.z, room2.cabinet.w, room2.cabinet.d, 'cabinet'));
   list.push(centered(room2.crate.x, room2.crate.z, room2.crate.w, room2.crate.d, 'crate'));
+
+  room3.racks.forEach(function (rack, i) {
+    list.push(centered(rack.x, rack.z, rack.w, rack.d, 'rack3-' + i));
+  });
+  list.push(centered(room3.lectern.x, room3.lectern.z, room3.lectern.w, room3.lectern.d, 'lectern'));
+  list.push(centered(room3.desk.x, room3.desk.z, room3.desk.w, room3.desk.d, 'desk3'));
+  list.push(centered(room3.chair.x, room3.chair.z, room3.chair.w, room3.chair.d, 'chair3'));
 
   return list;
 }
