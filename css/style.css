@@ -215,6 +215,35 @@ button {
   box-shadow: 0 0 8px var(--cyan);
 }
 
+.hud-timer {
+  min-width: 78px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: var(--font);
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--cyan);
+}
+
+.hud-timer.is-low {
+  color: #ff5c7a;
+  border-color: #ff5c7a;
+  animation: timer-pulse 1s steps(2) infinite;
+}
+
+@keyframes timer-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.screen .tag-bad {
+  color: #ff5c7a;
+  border-color: #ff5c7a;
+}
+
 .hud-actions {
   display: flex;
   gap: 10px;

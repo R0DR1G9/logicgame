@@ -83,6 +83,7 @@ function syncUi(modalOpen) {
   const free = controls.state.locked || controls.state.drag;
   if (free) {
     intro = false;
+    G.state.startClock();
   }
   byId('overlay').classList.toggle('hidden', !(running && intro && !paused && !modalOpen));
   byId('pause').classList.toggle('hidden', !(running && paused));

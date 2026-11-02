@@ -45,6 +45,7 @@
           <span id="hud-room" class="hud-room"></span>
         </div>
         <div id="hud-progress" class="hud-progress" aria-label="Progresso das salas"></div>
+        <div id="hud-timer" class="hud-timer" aria-label="Tempo restante">00:00</div>
         <div class="hud-actions">
           <button id="btn-notebook" class="btn" type="button">Caderno <span id="note-count" class="badge">0</span></button>
           <button id="btn-hint" class="btn" type="button">Dica</button>
@@ -81,6 +82,20 @@
       </div>
     </section>
 
+    <section id="screen-lose" class="screen hidden">
+      <p class="tag tag-bad">TEMPO ESGOTADO</p>
+      <h1>VOCÊ NÃO ESCAPOU</h1>
+      <p>O sistema trancou tudo. Uma nova partida traz desafios diferentes.</p>
+      <div class="stats">
+        <div class="stat"><span class="stat-value" id="lose-room">1</span><span class="stat-label">nível alcançado</span></div>
+        <div class="stat"><span class="stat-value" id="lose-attempts">0</span><span class="stat-label">tentativas</span></div>
+      </div>
+      <nav class="menu" aria-label="Fim de tempo">
+        <button id="btn-retry" class="btn primary menu-btn" type="button">Tentar de novo</button>
+        <button id="btn-lose-menu" class="btn menu-btn" type="button">Menu principal</button>
+      </nav>
+    </section>
+
     <section id="screen-end" class="screen hidden">
       <p class="tag">ACESSO TOTAL CONCEDIDO</p>
       <h1>VOCÊ ESCAPOU</h1>
@@ -110,6 +125,7 @@
   <div id="toast" class="toast hidden" role="status"></div>
 
   <script src="js/config.js"></script>
+  <script src="js/rng.js"></script>
   <script src="js/logic/evaluator.js"></script>
   <script src="js/state.js"></script>
   <script src="js/settings.js"></script>

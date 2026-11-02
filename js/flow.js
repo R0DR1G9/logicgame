@@ -54,6 +54,7 @@
   }
 
   function showScreen(name) {
+    dom.lose.classList.toggle('hidden', name !== 'lose');
     dom.start.classList.toggle('hidden', name !== 'start');
     dom.game.classList.toggle('hidden', name !== 'game');
     dom.end.classList.toggle('hidden', name !== 'end');
@@ -83,8 +84,35 @@
 
   function startNew() {
     G.save.clear();
-    G.state.reset();
+    G.state.reset(G.rng.newSeed());
     enter(null);
+    updateTimer();
+  }
+
+  function updateTimer() {
+    const left = G.state.remainingSeconds();
+    dom.timer.textContent = formatTime(left);
+    dom.timer.classList.toggle('is-low', G.state.clockStarted() && left <= 60);
+  }
+
+  function lose() {
+    const current = G.state.get();
+    G.view3d.stop();
+    G.save.clear();
+    ui.closeModal();
+    dom.loseRoom.textContent = String(current.room);
+    dom.loseAttempts.textContent = String(current.attempts);
+    showScreen('lose');
+  }
+
+  function tick() {
+    if (!G.view3d || !G.view3d.isRunning()) {
+      return;
+    }
+    updateTimer();
+    if (G.state.expired()) {
+      lose();
+    }
   }
 
   function askNewGame() {
@@ -114,7 +142,14 @@
       return;
     }
     G.state.load(data.state);
+    if (G.state.expired()) {
+      G.save.clear();
+      refreshMenu();
+      lose();
+      return;
+    }
     enter(data.pose);
+    updateTimer();
   }
 
   function toMenu() {
@@ -169,6 +204,10 @@
     dom.start = byId('screen-start');
     dom.game = byId('screen-game');
     dom.end = byId('screen-end');
+    dom.lose = byId('screen-lose');
+    dom.timer = byId('hud-timer');
+    dom.loseRoom = byId('lose-room');
+    dom.loseAttempts = byId('lose-attempts');
     dom.hudRoom = byId('hud-room');
     dom.progress = byId('hud-progress');
     dom.noteCount = byId('note-count');
@@ -187,6 +226,8 @@
     byId('btn-settings').addEventListener('click', G.settings.open);
     byId('btn-restart').addEventListener('click', startNew);
     byId('btn-end-menu').addEventListener('click', toMenu);
+    byId('btn-retry').addEventListener('click', startNew);
+    byId('btn-lose-menu').addEventListener('click', toMenu);
     byId('btn-notebook').addEventListener('click', showNotebook);
     byId('btn-hint').addEventListener('click', showHint);
     byId('btn-menu').addEventListener('click', function () {
@@ -199,6 +240,7 @@
     byId('btn-quit').addEventListener('click', toMenu);
 
     root.setInterval(G.save.write, AUTOSAVE_MS);
+    root.setInterval(tick, 250);
     root.addEventListener('pagehide', G.save.write);
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {
@@ -213,7 +255,8 @@
     collect: collect,
     showNotebook: showNotebook,
     showHint: showHint,
-    win: win
+    win: win,
+    lose: lose
   };
 
   init();
