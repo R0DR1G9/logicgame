@@ -440,6 +440,12 @@ export function buildWorld() {
     });
   }
 
+  function refresh() {
+    panelTex.set(panelOn);
+    screenTex.set(terminalMode);
+    room3Part.refresh();
+  }
+
   function doorOpenAmount(index) {
     return doorStates[index].open;
   }
@@ -455,6 +461,7 @@ export function buildWorld() {
     apply: apply,
     update: update,
     setQuality: setQuality,
+    refresh: refresh,
     doorOpenAmount: doorOpenAmount,
     isDoorUnlocked: isDoorUnlocked
   };

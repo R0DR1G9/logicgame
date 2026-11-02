@@ -4,42 +4,11 @@
   const ui = G.ui;
   const state = G.state;
 
-  const names = ['A', 'B', 'C', 'D'];
-  const A = E.v('A');
-  const B = E.v('B');
-  const C = E.v('C');
-  const D = E.v('D');
-
-  const premises = [
-    { node: E.imp(A, B), text: 'Se A é culpado, então B (cúmplice) também é culpado.' },
-    { node: E.or(B, C), text: 'B é culpado ou C é culpado.' },
-    { node: E.not(C), text: 'C não é culpado.' },
-    { node: A, text: 'A é culpado.' },
-    { node: E.imp(D, C), text: 'Se D é culpado, então C é culpado.' }
-  ];
-
-  const codeRule = 'A senha tem 4 dígitos: primeiro os números dos inocentes em ordem crescente, depois os números dos culpados em ordem crescente.';
-  const suspectKey = 'A = 1, B = 2, C = 3, D = 4';
-
-  function computeCode() {
-    const forced = E.forcedValues(
-      premises.map(function (premise) {
-        return premise.node;
-      }),
-      names
-    );
-    const innocents = names.filter(function (name) {
-      return forced[name] === false;
-    });
-    const culprits = names.filter(function (name) {
-      return forced[name] === true;
-    });
-    return innocents.concat(culprits).map(function (name) {
-      return String(names.indexOf(name) + 1);
-    }).join('');
+  function puzzle() {
+    return G.puzzle.r2;
   }
 
-  const CODE = computeCode();
+  const codeRule = 'A senha tem 4 dígitos: primeiro os números dos inocentes em ordem crescente, depois os números dos culpados em ordem crescente.';
 
   function premiseList(items, offset) {
     const list = ui.el('ol', 'premises');
@@ -60,8 +29,8 @@
     const body = ui.el('div', 'stack');
     ui.append(
       body,
-      ui.el('p', 'modal-text', 'Diário do investigador. Sejam A, B, C e D as proposições "o suspeito é culpado". Cada suspeito tem um número: ' + suspectKey + '.'),
-      premiseList(premises.slice(0, 4), 0),
+      ui.el('p', 'modal-text', 'Diário do investigador. Sejam A, B, C e D as proposições "o suspeito é culpado". Cada suspeito tem um número: ' + puzzle().key + '.'),
+      premiseList(puzzle().premises.slice(0, 4), 0),
       ui.el('p', 'modal-text', codeRule),
       ui.el('p', 'modal-text', 'A página 5 foi arrancada do diário. Talvez esteja guardada em algum lugar da mesa.')
     );
@@ -69,8 +38,8 @@
       'r2-diary',
       2,
       'Diário do investigador',
-      'Suspeitos: ' + suspectKey + '.\n' +
-        premises.slice(0, 4).map(function (premise, index) {
+      'Suspeitos: ' + puzzle().key + '.\n' +
+        puzzle().premises.slice(0, 4).map(function (premise, index) {
           return (index + 1) + '. ' + E.render(premise.node) + ' - ' + premise.text;
         }).join('\n') + '\n' + codeRule
     );
@@ -82,13 +51,13 @@
     ui.append(
       body,
       ui.el('p', 'modal-text', 'Você encontrou a página 5 do diário:'),
-      premiseList(premises.slice(4), 4)
+      premiseList(puzzle().premises.slice(4), 4)
     );
     G.main.collect(
       'r2-drawer',
       2,
       'Página 5 do diário',
-      '5. ' + E.render(premises[4].node) + ' - ' + premises[4].text
+      '5. ' + E.render(puzzle().premises[4].node) + ' - ' + puzzle().premises[4].text
     );
     ui.openModal('Gaveta da mesa', body);
   }
@@ -159,7 +128,7 @@
         return;
       }
       state.addAttempt();
-      if (entered === CODE) {
+      if (entered === puzzle().code) {
         state.markSolved('r2safe');
         ui.closeModal();
         ui.toast('Cofre aberto!', 'ok');
@@ -255,10 +224,10 @@
       return {
         stage: 'r2-deduce',
         list: [
-          'Comece com Modus Ponens usando as premissas 1 e 4.',
-          'Com as premissas 2 e 3, o Silogismo Disjuntivo confirma uma das conclusões anteriores.',
-          'Com as premissas 5 e 3, use Modus Tollens para saber se D é culpado.',
-          'Releia a regra de montagem da senha no diário: inocentes primeiro, depois culpados, cada grupo em ordem crescente.'
+          'Procure uma premissa que fixa o valor de um suspeito diretamente, como "X é culpado" ou "X não é culpado".',
+          'Use esse valor nas outras premissas: Modus Ponens, Modus Tollens e Silogismo Disjuntivo avançam um passo de cada vez.',
+          'Repita o processo com cada novo suspeito descoberto até todos os quatro estarem decididos.',
+          'Releia a regra de montagem da senha no diário: inocentes primeiro, depois culpados, cada grupo em ordem crescente, usando os números da chave dos suspeitos.'
         ]
       };
     }

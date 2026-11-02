@@ -17,7 +17,8 @@ export function buildRoom3(ctx) {
   const sc = room3.screen;
   const screenFrameMat = kit.material(0x0a1220, { metalness: 0.5, roughness: 0.4 });
   tag(kit.box(0.04, sc.h + 0.16, sc.w + 0.16, screenFrameMat, HALF - 0.02, sc.y, sc.z), screenInfo);
-  tag(kit.sign(tex.serverScreenTexture(), sc.w, sc.h, HALF - 0.042, sc.y, sc.z, -Math.PI / 2), screenInfo);
+  const serverTex = tex.serverScreenTexture();
+  tag(kit.sign(serverTex.texture, sc.w, sc.h, HALF - 0.042, sc.y, sc.z, -Math.PI / 2), screenInfo);
   addGlow(scene, 0x4dff9a, HALF - 0.7, sc.y, sc.z, 3.8, 0.16);
 
   const rackMap = tex.rackTexture();
@@ -176,5 +177,10 @@ export function buildRoom3(ctx) {
     dust.update(clock, dt);
   }
 
-  return { apply: apply, update: update };
+  function refresh() {
+    serverTex.set();
+    filesTex.set(filesDone);
+  }
+
+  return { apply: apply, update: update, refresh: refresh };
 }

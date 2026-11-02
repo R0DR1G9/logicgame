@@ -85,6 +85,7 @@
   function startNew() {
     G.save.clear();
     G.state.reset(G.rng.newSeed());
+    G.puzzle = G.generator.generate(G.state.seed());
     enter(null);
     updateTimer();
   }
@@ -142,6 +143,7 @@
       return;
     }
     G.state.load(data.state);
+    G.puzzle = G.generator.generate(G.state.seed());
     if (G.state.expired()) {
       G.save.clear();
       refreshMenu();

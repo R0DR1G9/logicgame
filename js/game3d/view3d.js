@@ -295,6 +295,7 @@ function setPose(x, z, yaw, pitch) {
 }
 
 function reset(resumePose) {
+  world.refresh();
   world.apply(status(), true);
   world.update(0);
   let pose = spawn;

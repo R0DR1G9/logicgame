@@ -27,6 +27,19 @@ function make(width, height, draw) {
   };
 }
 
+function puzzle() {
+  return (window.LogicGame && window.LogicGame.puzzle) || null;
+}
+
+function formulaLabel() {
+  const p = puzzle();
+  return p && p.r1 ? p.r1.label : 'F = ?';
+}
+
+function fitSize(text, maxWidth, maxSize) {
+  return Math.max(12, Math.min(maxSize, Math.floor(maxWidth / (text.length * 0.62))));
+}
+
 function font(ctx, size, weight) {
   ctx.font = (weight || 'bold') + ' ' + size + 'px ' + MONO;
 }
@@ -140,8 +153,8 @@ export function panelTexture() {
       ctx.fill();
       font(ctx, 38);
       center(ctx, power ? 'ENERGIA ON' : 'SEM ENERGIA', w / 2, 360, power ? '#4dff9a' : '#ff5c7a');
-      font(ctx, 26, 'normal');
-      center(ctx, 'F = (P ∨ ¬Q) ∧ P', w / 2, 440, '#d6e4f5');
+      font(ctx, fitSize(formulaLabel(), 400, 26), 'normal');
+      center(ctx, formulaLabel(), w / 2, 440, '#d6e4f5');
       center(ctx, power ? 'circuito ativo' : 'precisa de sinal V', w / 2, 500, '#7f95b3');
     });
   }
@@ -163,8 +176,8 @@ export function screenTexture() {
       frame(ctx, w, h, mode === 'done' ? '#4dff9a' : '#3de0ff', 6);
       font(ctx, 30);
       center(ctx, 'TERMINAL ONLINE', w / 2, 52, '#3de0ff');
-      font(ctx, 36);
-      center(ctx, 'F = (P ∨ ¬Q) ∧ P', w / 2, 130, '#ffb347');
+      font(ctx, fitSize(formulaLabel(), 460, 36));
+      center(ctx, formulaLabel(), w / 2, 130, '#ffb347');
       font(ctx, 24, 'normal');
       if (mode === 'done') {
         center(ctx, 'TABELA REGISTRADA', w / 2, 205, '#4dff9a');
@@ -399,25 +412,32 @@ export function safeTexture() {
 }
 
 export function serverScreenTexture() {
-  return make(1200, 700, function (ctx, w, h) {
-    ctx.fillStyle = '#04141c';
-    ctx.fillRect(0, 0, w, h);
-    frame(ctx, w, h, '#4dff9a', 10);
-    font(ctx, 54);
-    center(ctx, 'SERVIDOR CENTRAL', w / 2, 80, '#4dff9a');
-    font(ctx, 34, 'normal');
-    center(ctx, 'CONDIÇÃO DE EXCLUSÃO', w / 2, 190, '#7f95b3');
-    font(ctx, 54);
-    center(ctx, '∃x (x ∈ ℕ ∧ x é par ∧ x² < 50)', w / 2, 300, '#ffb347');
-    font(ctx, 34, 'normal');
-    center(ctx, 'apenas arquivos que satisfazem', w / 2, 410, '#d6e4f5');
-    center(ctx, 'as três condições ao mesmo tempo', w / 2, 460, '#d6e4f5');
-    for (let i = 0; i < 24; i++) {
-      const bar = 20 + ((i * 37) % 70);
-      ctx.fillStyle = i % 5 === 0 ? '#ffb347' : '#1f6b52';
-      ctx.fillRect(80 + i * 44, 640 - bar, 30, bar);
-    }
-  }).texture;
+  const made = make(1200, 700, function () {});
+  function draw() {
+    const p = puzzle();
+    const condition = p && p.r3 ? p.r3.condition : '';
+    made.redraw(function (ctx, w, h) {
+      ctx.fillStyle = '#04141c';
+      ctx.fillRect(0, 0, w, h);
+      frame(ctx, w, h, '#4dff9a', 10);
+      font(ctx, 54);
+      center(ctx, 'SERVIDOR CENTRAL', w / 2, 80, '#4dff9a');
+      font(ctx, 34, 'normal');
+      center(ctx, 'CONDIÇÃO DE EXCLUSÃO', w / 2, 190, '#7f95b3');
+      font(ctx, fitSize(condition, 1080, 54));
+      center(ctx, condition, w / 2, 300, '#ffb347');
+      font(ctx, 34, 'normal');
+      center(ctx, 'apenas arquivos que satisfazem', w / 2, 410, '#d6e4f5');
+      center(ctx, 'as três condições ao mesmo tempo', w / 2, 460, '#d6e4f5');
+      for (let i = 0; i < 24; i++) {
+        const bar = 20 + ((i * 37) % 70);
+        ctx.fillStyle = i % 5 === 0 ? '#ffb347' : '#1f6b52';
+        ctx.fillRect(80 + i * 44, 640 - bar, 30, bar);
+      }
+    });
+  }
+  draw();
+  return { texture: made.texture, set: draw };
 }
 
 export function manualTexture() {
@@ -449,9 +469,9 @@ export function manualTexture() {
 
 export function filesTexture() {
   const made = make(512, 300, function () {});
-  const numbers = [-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
   function draw(done) {
-    const start = (window.LogicGame && window.LogicGame.config && window.LogicGame.config.naturalsStart) || 0;
+    const p = puzzle();
+    const numbers = p && p.r3 ? p.r3.grid : [];
     made.redraw(function (ctx, w, h) {
       ctx.fillStyle = '#04141c';
       ctx.fillRect(0, 0, w, h);
@@ -461,7 +481,7 @@ export function filesTexture() {
       numbers.forEach(function (n, i) {
         const x = 24 + (i % 6) * 80;
         const y = 66 + Math.floor(i / 6) * 84;
-        const gone = done && n >= start && n % 2 === 0 && n * n < 50;
+        const gone = done && p.r3.satisfies(n);
         ctx.fillStyle = gone ? '#0a0f16' : '#0b2a3a';
         ctx.fillRect(x, y, 70, 70);
         ctx.strokeStyle = gone ? '#3a2030' : '#3de0ff';

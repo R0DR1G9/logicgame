@@ -6,8 +6,9 @@
 
   const P = E.v('P');
   const Q = E.v('Q');
-  const formula = E.and(E.or(P, E.not(Q)), P);
-  const formulaText = 'F = ' + E.render(formula);
+  function puzzle() {
+    return G.puzzle.r1;
+  }
   const wallText = 'Para reativar a energia, o circuito precisa de um sinal V (Verdadeiro).';
 
   function openWallNote() {
@@ -61,7 +62,7 @@
     ui.append(
       body,
       ui.el('p', 'modal-text', wallText),
-      ui.el('p', 'formula', formulaText)
+      ui.el('p', 'formula', puzzle().label)
     );
 
     if (state.isSolved('r1power')) {
@@ -79,7 +80,7 @@
     const apply = ui.button('Aplicar sinal', 'btn primary', function () {
       state.addAttempt();
       const env = { P: switchP.get(), Q: switchQ.get() };
-      if (E.evaluate(formula, env)) {
+      if (E.evaluate(puzzle().formula, env)) {
         state.markSolved('r1power');
         ui.closeModal();
         ui.toast('Energia restabelecida!', 'ok');
@@ -106,7 +107,7 @@
     ui.append(
       body,
       ui.el('p', 'modal-text', 'Terminal religado. Para registrar o comportamento do circuito, complete a tabela-verdade de F.'),
-      ui.el('p', 'formula', formulaText)
+      ui.el('p', 'formula', puzzle().label)
     );
 
     if (state.isSolved('r1table')) {
@@ -115,7 +116,7 @@
       return;
     }
 
-    const rows = E.truthTable(formula);
+    const rows = E.truthTable(puzzle().formula);
     const cells = rows.map(function () {
       return ui.createToggle('', null);
     });
@@ -144,7 +145,7 @@
       }
       ui.setFeedback(
         result,
-        wrong + ' linha(s) incorreta(s). Calcule primeiro ¬Q, depois P ∨ ¬Q e por fim o ∧ com P.',
+        wrong + ' linha(s) incorreta(s). Resolva primeiro as partes menores da fórmula e depois o operador principal.',
         'bad'
       );
     });
@@ -207,9 +208,9 @@
       return {
         stage: 'r1-power',
         list: [
-          'Observe o operador principal da fórmula do painel. Ele é uma conjunção (∧).',
-          'Uma conjunção só é verdadeira quando os dois lados são verdadeiros. O que isso exige de P?',
-          'P precisa estar em V. Depois teste Q em V e em F e veja se muda alguma coisa.'
+          'Observe o operador principal da fórmula do painel e consulte o quadro de conectivos.',
+          'Teste as quatro combinações de P e Q mentalmente e veja em qual delas a fórmula dá V.',
+          'Resolva as partes menores primeiro. Depois combine os resultados com o operador principal.'
         ]
       };
     }
@@ -217,9 +218,9 @@
       return {
         stage: 'r1-table',
         list: [
-          'As linhas da tabela cobrem as quatro combinações de P e Q. Calcule ¬Q primeiro.',
-          'Em cada linha, resolva o parêntese P ∨ ¬Q e depois faça o ∧ com P.',
-          'Se P é F, a conjunção inteira é F. Se P é V, o parêntese também é V.'
+          'As linhas da tabela cobrem as quatro combinações de P e Q. Comece pelas negações.',
+          'Em cada linha, resolva os parênteses de dentro para fora.',
+          'Use o quadro de conectivos para conferir cada operador: só a implicação é F com P em V e Q em F.'
         ]
       };
     }
