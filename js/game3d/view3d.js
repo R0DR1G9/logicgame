@@ -42,6 +42,7 @@ function status() {
     power: state.isSolved('r1power'),
     table: state.isSolved('r1table'),
     safe: state.isSolved('r2safe'),
+    files: state.isSolved('r3files'),
     lock: state.isSolved('r3lock')
   };
 }
