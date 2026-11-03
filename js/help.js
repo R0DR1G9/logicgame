@@ -14,7 +14,7 @@
   const rooms = [
     ['Nível 1', 'Tabela-verdade e conectivos: restabeleça a energia e valide a fórmula.'],
     ['Nível 2', 'Dedução com premissas: descubra quem é culpado e abra o cofre.'],
-    ['Nível 3', 'Quantificadores sobre os números naturais: ∀ e ∃ decidem a verdade das afirmações.'],
+    ['Nível 3', 'Tautologia, contradição e contingência, precedência dos conectivos e implicação lógica.'],
     ['Nível 4', 'Sistema de premissas e equivalências: De Morgan, contrapositiva e implicação material.'],
     ['Nível 5', 'Cavaleiros e mentirosos, quantificadores sobre uma relação e validade de argumentos.']
   ];

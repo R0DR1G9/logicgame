@@ -25,11 +25,11 @@ Depois acesse `http://localhost:8765/index.html`. Não precisa instalar nada, o 
 | --- | --- | --- | --- |
 | 1 | Fácil | Conectivos e tabela-verdade | Avaliar uma fórmula para cada combinação de valores e preencher a tabela para validar o terminal |
 | 2 | Intermediária | Dedução com premissas | Cruzar premissas sobre suspeitos para descobrir o culpado e formar o código do cofre |
-| 3 | Pouco difícil | Quantificadores sobre os naturais | Decidir a verdade de afirmações com ∀ e ∃ para abrir o arquivo e o cadeado |
+| 3 | Pouco difícil | Tautologia, contradição, contingência, precedência e implicação lógica | Classificar 6 fórmulas pela tabela-verdade para expor o cadeado e depois julgar 5 implicações A ⇒ B para abri-lo |
 | 4 | Difícil | Equivalências lógicas | Deduzir o estado das válvulas a partir de premissas e escolher a fórmula equivalente (De Morgan, contrapositiva, implicação material) |
 | 5 | Muito difícil | Cavaleiros e mentirosos, quantificadores aninhados e validade de argumentos | Três selos independentes: identificar quem diz a verdade, julgar afirmações sobre uma relação e separar argumentos válidos dos inválidos |
 
-As salas 1, 2 e 4 usam lógica proposicional. A sala 3 e parte da sala 5 estendem o conteúdo para quantificadores.
+As salas 1 a 4 usam lógica proposicional. Na sala 5, o selo das relações ainda usa quantificadores e será trocado por conteúdo proposicional.
 
 ## Desafios gerados por semente
 
