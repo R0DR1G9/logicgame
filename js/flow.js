@@ -225,6 +225,7 @@
 
     byId('btn-new').addEventListener('click', askNewGame);
     dom.continueBtn.addEventListener('click', continueGame);
+    byId('btn-help').addEventListener('click', G.help.open);
     byId('btn-settings').addEventListener('click', G.settings.open);
     byId('btn-restart').addEventListener('click', startNew);
     byId('btn-end-menu').addEventListener('click', toMenu);
