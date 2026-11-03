@@ -10,7 +10,7 @@ export const EYE = 1.65;
 export const REACH = 3.2;
 export const SPEED = 3.2;
 export const SPRINT = 5;
-export const ROOM_COUNT = 4;
+export const ROOM_COUNT = 5;
 
 export function roomBounds(index) {
   const zMax = (1 - index) * (DEPTH + WALL);
@@ -23,13 +23,14 @@ export const rooms = Array.from({ length: ROOM_COUNT }, function (unused, i) {
 
 export const spawn = { x: 0, z: -1.2, yaw: 0, pitch: 0 };
 
-export const unlockKeys = ['r1table', 'r2safe', 'r3lock', 'r4equiv'];
+export const unlockKeys = ['r1table', 'r2safe', 'r3lock', 'r4equiv', 'r5args'];
 
 export const lockedMessages = [
   'A porta está trancada. Restabeleça a energia e valide o terminal.',
   'A porta está trancada. A chave está dentro do cofre.',
   'A porta está trancada. O cadeado final ainda está fechado.',
-  'A porta de escape está trancada.'
+  'A porta está trancada. O oráculo ainda não foi satisfeito.',
+  'A porta de escape está trancada. Abra os três selos.'
 ];
 
 export const doors = rooms.map(function (room, i) {
@@ -84,6 +85,15 @@ export const room4 = {
   chair: { x: -2.9, z: -31.6, w: 0.5, d: 0.5 }
 };
 
+export const room5 = {
+  islands: { x: -HALF + 0.02, y: 1.85, z: -37.2, w: 2.4, h: 1.4 },
+  relations: { x: HALF - 0.02, y: 1.85, z: -37.2, w: 2.4, h: 1.4 },
+  desk: { x: 2.4, z: -40.5, w: 1.8, d: 0.8, h: 0.8 },
+  chair: { x: 2.4, z: -39.4, w: 0.5, d: 0.5 },
+  seals: { x: -2.4, y: 1.7, w: 1.6, h: 0.7 },
+  pedestal: { x: -2.2, z: -39.2, r: 0.5 }
+};
+
 function box(xMin, xMax, zMin, zMax, id) {
   return { id: id, xMin: xMin, xMax: xMax, zMin: zMin, zMax: zMax, disabled: false };
 }
@@ -135,6 +145,10 @@ export function buildColliders() {
   list.push(centered(room4.core.x, room4.core.z, room4.core.w, room4.core.d, 'core'));
   list.push(centered(room4.desk.x, room4.desk.z, room4.desk.w, room4.desk.d, 'desk4'));
   list.push(centered(room4.chair.x, room4.chair.z, room4.chair.w, room4.chair.d, 'chair4'));
+
+  list.push(centered(room5.desk.x, room5.desk.z, room5.desk.w, room5.desk.d, 'desk5'));
+  list.push(centered(room5.chair.x, room5.chair.z, room5.chair.w, room5.chair.d, 'chair5'));
+  list.push(centered(room5.pedestal.x, room5.pedestal.z, room5.pedestal.r * 2, room5.pedestal.r * 2, 'pedestal5'));
 
   return list;
 }

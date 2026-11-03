@@ -9,14 +9,15 @@ import { createKit } from './kit.js';
 import { buildRoom2 } from './room2.js';
 import { buildRoom3 } from './room3.js';
 import { buildRoom4 } from './room4.js';
+import { buildRoom5 } from './room5.js';
 import { addGlow, addBlob, addEdgeShade, createDust } from './effects.js';
 
-const ACCENTS = [0x3de0ff, 0xffb347, 0x4dff9a, 0xff5c7a];
-const ACCENT_CSS = ['#3de0ff', '#ffb347', '#4dff9a', '#ff5c7a'];
-const WALL_BODY = [0x1c2b47, 0x2c2340, 0x173631, 0x3a1a26];
-const WALL_TINTS = [0x8fa8d6, 0x7a6cae, 0x6fae98, 0xb0766c];
-const FLOOR_TINTS = [0xc9d3e6, 0xd9cbf0, 0xc6eadb, 0xe3cdc4];
-const DOOR_LABELS = ['NÍVEL 2', 'NÍVEL 3', 'NÍVEL 4', 'SAÍDA'];
+const ACCENTS = [0x3de0ff, 0xffb347, 0x4dff9a, 0xff5c7a, 0xc78bff];
+const ACCENT_CSS = ['#3de0ff', '#ffb347', '#4dff9a', '#ff5c7a', '#c78bff'];
+const WALL_BODY = [0x1c2b47, 0x2c2340, 0x173631, 0x3a1a26, 0x2a1a45];
+const WALL_TINTS = [0x8fa8d6, 0x7a6cae, 0x6fae98, 0xb0766c, 0x9a7ad0];
+const FLOOR_TINTS = [0xc9d3e6, 0xd9cbf0, 0xc6eadb, 0xe3cdc4, 0xd8cdf0];
+const DOOR_LABELS = ['NÍVEL 2', 'NÍVEL 3', 'NÍVEL 4', 'NÍVEL 5', 'SAÍDA'];
 const SOLID_LIGHT = 52;
 const LED_COLORS = [0x4dff9a, 0xffb347, 0xff5c7a, 0x3de0ff];
 
@@ -255,6 +256,7 @@ export function buildWorld() {
 
   const room3Part = buildRoom3({ scene: scene, kit: kit, tag: tag, pickables: pickables, leds: leds });
   const room4Part = buildRoom4({ scene: scene, kit: kit, tag: tag, pickables: pickables });
+  const room5Part = buildRoom5({ scene: scene, kit: kit, tag: tag, pickables: pickables });
 
   const doorStates = doors.map(function (door, i) {
     const group = new THREE.Group();
@@ -382,6 +384,7 @@ export function buildWorld() {
     room2Part.apply(status, instant);
     room3Part.apply(status, instant);
     room4Part.apply(status, instant);
+    room5Part.apply(status, instant);
     const unlocked = status.unlocks;
     const opened = [];
     doorStates.forEach(function (state, i) {
@@ -436,6 +439,7 @@ export function buildWorld() {
     room2Part.update(dt, clock);
     room3Part.update(dt, clock);
     room4Part.update(dt, clock);
+    room5Part.update(dt, clock);
   }
 
   function setQuality(quality) {
@@ -449,6 +453,7 @@ export function buildWorld() {
     screenTex.set(terminalMode);
     room3Part.refresh();
     room4Part.refresh();
+    room5Part.refresh();
   }
 
   function doorOpenAmount(index) {

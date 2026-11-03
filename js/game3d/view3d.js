@@ -46,7 +46,16 @@ function status() {
     lock: state.isSolved('r3lock'),
     valves: state.isSolved('r4valves'),
     equiv: state.isSolved('r4equiv'),
-    unlocks: [state.isSolved('r1table'), state.isSolved('r2safe'), state.isSolved('r3lock'), state.isSolved('r4equiv')]
+    islands: state.isSolved('r5islands'),
+    relations: state.isSolved('r5relations'),
+    args: state.isSolved('r5args'),
+    unlocks: [
+      state.isSolved('r1table'),
+      state.isSolved('r2safe'),
+      state.isSolved('r3lock'),
+      state.isSolved('r4equiv'),
+      state.isSolved('r5islands') && state.isSolved('r5relations') && state.isSolved('r5args')
+    ]
   };
 }
 

@@ -682,3 +682,14 @@ button {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle-row .modal-text {
+  margin: 0;
+  flex: 1;
+}
