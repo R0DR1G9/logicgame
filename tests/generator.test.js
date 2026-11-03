@@ -46,14 +46,24 @@ for (let seed = 1; seed <= N; seed++) {
   assert.ok(p.r2.names.every((n) => f[n] !== null), 'unico');
   assert.strictEqual(p.r2.code.length, 4);
   assert.strictEqual(new Set(p.r2.code.split('')).size, 4);
-  assert.ok(p.r3.answer.length >= 3);
-  assert.strictEqual(p.r3.grid.length, 12);
-  assert.strictEqual(new Set(p.r3.grid).size, 12);
-  assert.strictEqual(p.r3.statements.length, 3);
+  const f3 = p.r3.formulas;
+  assert.strictEqual(f3.length, 6);
+  assert.strictEqual(new Set(f3.map((x) => x.text)).size, 6);
+  [0, 1, 2].forEach((k) => assert.strictEqual(f3.filter((x) => x.kind === k).length, 2));
+  f3.forEach((x) => {
+    const values = E.truthTable(x.node).map((r) => r.value);
+    const kind = values.every(Boolean) ? 0 : values.some(Boolean) ? 2 : 1;
+    assert.strictEqual(kind, x.kind);
+  });
+  const im = p.r3.implications;
+  assert.strictEqual(im.length, 5);
+  const iv = im.filter((x) => x.valid).length;
+  assert.ok(iv >= 2 && iv <= 3);
+  im.forEach((x) => assert.strictEqual(x.valid, E.entails([x.left.node], x.right.node, E.variablesOf(E.and(x.left.node, x.right.node)))));
   seen.f.add(p.r1.text);
   seen.c.add(p.r2.code + '|' + p.r2.premises.map((x) => x.text).join(''));
-  seen.g.add(p.r3.condition + p.r3.grid.join(','));
-  seen.all.add(JSON.stringify([p.r1.text, p.r2.premises.map((x) => x.text), p.r3.condition, p.r3.grid, p.r3.statements.map((s) => s.text)]));
+  seen.g.add(f3.map((x) => x.text).join(',') + im.map((x) => x.left.text + x.right.text).join(','));
+  seen.all.add(JSON.stringify([p.r1.text, p.r2.premises.map((x) => x.text), f3.map((x) => x.text), im.map((x) => x.left.text + x.right.text)]));
 }
 console.log('falhas', JSON.stringify(fail), 'ms', Date.now() - t0);
 console.log('distintos r1', seen.f.size, 'r2', seen.c.size, 'r3', seen.g.size, 'partidas', seen.all.size, 'de', N);
@@ -61,5 +71,5 @@ const s = gen.generate(12345);
 console.log(s.r5.islands.statements.map((x) => PEOPLE_NAME[x.speaker] + ': ' + x.text).join(' | '), '->', s.r5.islands.solution.map((b) => (b ? 'C' : 'M')).join(''));
 console.log(s.r5.relations.matrix.map((r) => r.map((b) => (b ? 1 : 0)).join('')).join('/'), s.r5.relations.statements.map((x) => x.text + '=' + x.truth).join(' ; '));
 console.log(s.r5.args.items.map((it) => it.premises.map((x) => x.text).join(', ') + ' => ' + it.conclusion.text + ' ' + it.valid).join(' || '));
-console.log(s.r1.label, '|', s.r2.key, '|', s.r2.premises.map((x) => x.text).join(' / '), '|', s.r2.code, '|', s.r3.condition, s.r3.grid.join(','), '->', s.r3.answer.join(','), '|', s.r3.statements.map((x) => x.text + '=' + x.truth).join(' ; '));
+console.log(s.r1.label, '|', s.r2.key, '|', s.r2.premises.map((x) => x.text).join(' / '), '|', s.r2.code, '|', s.r3.formulas.map((x) => x.text + '=' + s.r3.kinds[x.kind]).join(' ; '), '|', s.r3.implications.map((x) => x.left.text + ' => ' + x.right.text + ' ' + x.valid).join(' ; '));
 console.log(s.r4.valves.premises.map((x) => x.formal).join(' | '), '||', s.r4.equiv.target.text, '=>', s.r4.equiv.options.map((o, i) => (i === s.r4.equiv.answerIndex ? '*' : '') + o.text).join(' ; '));

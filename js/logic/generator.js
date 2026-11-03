@@ -8,18 +8,6 @@
     return G.rng.create((seed ^ SALT[room]) >>> 0);
   }
 
-  function isPrime(n) {
-    if (n < 2) {
-      return false;
-    }
-    for (let i = 2; i * i <= n; i++) {
-      if (n % i === 0) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   function randomFormula(rng, names, depth) {
     const ops = ['and', 'or', 'imp', 'imp', 'or', 'and', 'iff'];
     function leaf() {
@@ -185,143 +173,125 @@
     return null;
   }
 
-  const PROPERTIES = [
-    { id: 'even', text: function () { return 'x é par'; }, fn: function (x) { return x % 2 === 0; } },
-    { id: 'odd', text: function () { return 'x é ímpar'; }, fn: function (x) { return Math.abs(x % 2) === 1; } },
-    { id: 'mult3', text: function () { return 'x é múltiplo de 3'; }, fn: function (x) { return x % 3 === 0; } },
-    { id: 'mult5', text: function () { return 'x é múltiplo de 5'; }, fn: function (x) { return x % 5 === 0; } },
-    { id: 'prime', text: function () { return 'x é primo'; }, fn: function (x) { return isPrime(x); } }
-  ];
+  const PRECEDENCE = { not: 5, and: 4, or: 3, imp: 2, iff: 1 };
+  const OPERATOR = { and: '∧', or: '∨', imp: '→', iff: '↔' };
 
-  function boundFor(rng) {
-    const kind = rng.pick(['square', 'greater', 'less']);
-    if (kind === 'square') {
-      const k = rng.pick([20, 30, 40, 50, 60, 80, 100]);
-      return { text: 'x² < ' + k, fn: function (x) { return x * x < k; } };
+  function renderPrecedence(node) {
+    if (node.type === 'var') {
+      return node.name;
     }
-    if (kind === 'greater') {
-      const c = rng.int(1, 6);
-      return { text: 'x > ' + c, fn: function (x) { return x > c; } };
+    if (node.type === 'not') {
+      const child = node.args[0];
+      const inner = renderPrecedence(child);
+      return '¬' + (child.type === 'var' || child.type === 'not' ? inner : '(' + inner + ')');
     }
-    const c = rng.int(5, 10);
-    return { text: 'x < ' + c, fn: function (x) { return x < c; } };
+    const parts = node.args.map(function (child) {
+      const text = renderPrecedence(child);
+      const tighter = child.type === 'var' || child.type === 'not' || PRECEDENCE[child.type] > PRECEDENCE[node.type];
+      return tighter ? text : '(' + text + ')';
+    });
+    return parts[0] + ' ' + OPERATOR[node.type] + ' ' + parts[1];
   }
 
-  function room3(seed, start, limit) {
-    const rng = rngFor(seed, 3);
-    const naturalsStart = start === undefined ? 0 : start;
-    const searchLimit = limit === undefined ? 20 : limit;
-    for (let tries = 0; tries < 600; tries++) {
-      const first = rng.pick(PROPERTIES);
-      const bound = boundFor(rng);
-      const satisfies = function (x) {
-        return Number.isInteger(x) && x >= naturalsStart && first.fn(x) && bound.fn(x);
-      };
-      const pure = function (x) {
-        return first.fn(x) && bound.fn(x);
-      };
-      const candidates = [];
-      for (let n = -6; n <= 13; n++) {
-        candidates.push(n);
-      }
-      const yes = candidates.filter(satisfies);
-      const traps = candidates.filter(function (n) { return n < naturalsStart && pure(n); });
-      const no = candidates.filter(function (n) { return !pure(n); });
-      if (yes.length < 3 || traps.length < 1 || no.length < 4) {
+  const TAUTOLOGIES = [
+    'P ∨ ¬P', 'P → P', '(P ∧ Q) → P', 'P → (P ∨ Q)', '((P → Q) ∧ P) → Q', '¬(P ∧ Q) ↔ (¬P ∨ ¬Q)',
+    '(P → Q) ↔ (¬Q → ¬P)', '((P → Q) ∧ (Q → R)) → (P → R)', 'P ↔ ¬¬P', '((P ∨ Q) ∧ ¬P) → Q',
+    '¬(P ∨ Q) ↔ (¬P ∧ ¬Q)', '(P ∧ Q) ↔ (Q ∧ P)', 'P ∧ Q → Q ∨ R', '(P → Q) ∨ (Q → P)', 'P → (Q → P)'
+  ];
+
+  const CONTRADICTIONS = [
+    'P ∧ ¬P', '¬(P → P)', 'P ↔ ¬P', '(P → Q) ∧ P ∧ ¬Q', '¬(P ∨ ¬P)', '(P ∨ Q) ∧ ¬P ∧ ¬Q',
+    '¬((P → Q) ↔ (¬P ∨ Q))', '(P ∧ Q) ∧ ¬(P ∨ Q)', '¬(P → (Q → P))', '(P ↔ Q) ∧ (P ∧ ¬Q)',
+    '¬(P ∨ Q) ∧ (P ∨ R) ∧ ¬R', 'P ∧ (P → Q) ∧ ¬(P ∧ Q)'
+  ];
+
+  const CONTINGENCIES = [
+    'P → Q', 'P ∧ Q', 'P ∨ Q', '(P → Q) → (Q → P)', 'P ↔ Q', '¬P ∨ (Q ∧ R)', '(P ∨ Q) → (P ∧ Q)',
+    '(P → Q) ∧ (Q → R)', '¬(P ∧ Q) → R', 'P ∧ ¬Q', '(P ∧ Q) → (P ↔ R)', '(P ∨ Q) ∧ (¬P ∨ R)',
+    '¬P → (Q ∨ R)', '(P → Q) ↔ (Q → R)'
+  ];
+
+  const IMPLICATIONS = [
+    ['P ∧ Q', 'P'], ['P', 'P ∨ Q'], ['(P → Q) ∧ P', 'Q'], ['(P → Q) ∧ ¬Q', '¬P'], ['(P ∨ Q) ∧ ¬P', 'Q'],
+    ['(P → Q) ∧ (Q → R)', 'P → R'], ['P', 'P'], ['P ∧ Q', 'P ↔ Q'], ['¬(P ∨ Q)', '¬P'], ['P ↔ Q', 'P → Q'],
+    ['Q', 'P ∧ Q'], ['P ∨ Q', 'P'], ['(P → Q) ∧ Q', 'P'], ['(P → Q) ∧ ¬P', '¬Q'], ['P → Q', 'Q → P'],
+    ['P', 'P ∧ Q'], ['¬(P ∧ Q)', '¬P'], ['P ↔ Q', 'P ∧ Q'], ['P ∨ Q', 'P ↔ Q'], ['(P → R) ∧ (Q → R)', 'P → Q']
+  ];
+
+  function renameMap(rng, symbols) {
+    const letters = rng.shuffle(['P', 'Q', 'R', 'S']);
+    const map = {};
+    symbols.forEach(function (symbol, i) {
+      map[symbol] = E.v(letters[i]);
+    });
+    return map;
+  }
+
+  function classify(node) {
+    const values = E.truthTable(node).map(function (row) { return row.value; });
+    if (values.every(Boolean)) {
+      return 0;
+    }
+    if (values.every(function (value) { return !value; })) {
+      return 1;
+    }
+    return 2;
+  }
+
+  function pickClassified(rng, pool, kind, count, taken) {
+    const picked = [];
+    const order = rng.shuffle(pool.slice());
+    for (let i = 0; i < order.length && picked.length < count; i++) {
+      const map = renameMap(rng, ['P', 'Q', 'R']);
+      const node = substitute(parseSimple(order[i]), map);
+      const text = renderPrecedence(node);
+      if (classify(node) !== kind || taken.has(text)) {
         continue;
       }
-      const chosenYes = rng.shuffle(yes).slice(0, Math.min(yes.length, rng.int(3, 4)));
-      const chosenTraps = rng.shuffle(traps).slice(0, Math.min(traps.length, 2));
-      const rest = 12 - chosenYes.length - chosenTraps.length;
-      const chosenNo = rng.shuffle(no).slice(0, rest);
-      if (chosenNo.length < rest) {
-        continue;
+      taken.add(text);
+      picked.push({ text: text, node: node, kind: kind });
+    }
+    return picked;
+  }
+
+  function implicationsStage(rng) {
+    for (let tries = 0; tries < 400; tries++) {
+      const order = rng.shuffle(IMPLICATIONS.slice()).slice(0, 5);
+      const items = order.map(function (pair) {
+        const map = renameMap(rng, ['P', 'Q', 'R']);
+        const left = substitute(parseSimple(pair[0]), map);
+        const right = substitute(parseSimple(pair[1]), map);
+        const names = E.variablesOf(E.and(left, right));
+        return {
+          left: { text: renderPrecedence(left), node: left },
+          right: { text: renderPrecedence(right), node: right },
+          valid: E.entails([left], right, names)
+        };
+      });
+      const valid = items.filter(function (item) { return item.valid; }).length;
+      if (valid >= 2 && valid <= 3) {
+        return items;
       }
-      const grid = chosenYes.concat(chosenTraps).concat(chosenNo).sort(function (a, b) { return a - b; });
-      const condition = '∃x (x ∈ ℕ ∧ ' + first.text() + ' ∧ ' + bound.text + ')';
-      const statements = buildStatements(rng, 3, searchLimit);
-      return {
-        grid: grid,
-        condition: condition,
-        answer: grid.filter(satisfies),
-        satisfies: satisfies,
-        statements: statements
-      };
     }
     return null;
   }
 
-  function buildStatements(rng, count, searchLimit) {
-    const forallTrue = [
-      { text: '∀x ∈ ℕ (x ≥ 0)' },
-      { text: '∀x ∈ ℕ (x² ≥ x)' },
-      { text: '∀x ∈ ℕ (x + 1 > x)' },
-      { text: '∀x ∈ ℕ (x é par ∨ x é ímpar)' }
-    ];
-    const existsFalse = [
-      { text: '∃x ∈ ℕ (x < 0)' },
-      { text: '∃x ∈ ℕ (x² < 0)' },
-      { text: '∃x ∈ ℕ (x é par ∧ x é ímpar)' },
-      { text: '∃x ∈ ℕ (x + 1 < x)' }
-    ];
-    function forallFalse() {
-      const kind = rng.pick(['square', 'even', 'less', 'mult']);
-      if (kind === 'square') {
-        const k = rng.int(30, 300);
-        return { text: '∀x ∈ ℕ (x² < ' + k + ')', truth: false };
-      }
-      if (kind === 'even') {
-        return { text: '∀x ∈ ℕ (x é par)', truth: false };
-      }
-      if (kind === 'less') {
-        const c = rng.int(3, 15);
-        return { text: '∀x ∈ ℕ (x < ' + c + ')', truth: false };
-      }
-      const m = rng.pick([2, 3, 4, 5]);
-      return { text: '∀x ∈ ℕ (x é múltiplo de ' + m + ')', truth: false };
+  function room3(seed) {
+    const rng = rngFor(seed, 3);
+    const taken = new Set();
+    const formulas = pickClassified(rng, TAUTOLOGIES, 0, 2, taken)
+      .concat(pickClassified(rng, CONTRADICTIONS, 1, 2, taken))
+      .concat(pickClassified(rng, CONTINGENCIES, 2, 2, taken));
+    const implications = implicationsStage(rng);
+    if (formulas.length !== 6 || !implications) {
+      return null;
     }
-    function existsTrue() {
-      const kind = rng.pick(['oddsq', 'mult', 'square', 'evengt']);
-      if (kind === 'oddsq') {
-        const k = rng.int(10, 80);
-        return { text: '∃x ∈ ℕ (x é ímpar ∧ x² < ' + k + ')', truth: true };
-      }
-      if (kind === 'mult') {
-        const m = rng.pick([3, 4, 5, 7]);
-        const c = rng.int(2, 9);
-        return { text: '∃x ∈ ℕ (x é múltiplo de ' + m + ' ∧ x > ' + c + ')', truth: true };
-      }
-      if (kind === 'square') {
-        const n = rng.pick([16, 25, 36, 49, 64, 81]);
-        return { text: '∃x ∈ ℕ (x² = ' + n + ')', truth: true };
-      }
-      const c = rng.int(3, 12);
-      return { text: '∃x ∈ ℕ (x é par ∧ x > ' + c + ')', truth: true };
-    }
-    const makers = [
-      function () { const item = rng.pick(forallTrue); return { text: item.text, truth: true }; },
-      function () { const item = rng.pick(existsFalse); return { text: item.text, truth: false }; },
-      forallFalse,
-      existsTrue
-    ];
-    let list = [];
-    for (let tries = 0; tries < 100; tries++) {
-      list = [];
-      const used = new Set();
-      const order = rng.shuffle([0, 1, 2, 3]).slice(0, count);
-      order.forEach(function (index) {
-        const item = makers[index]();
-        if (!used.has(item.text)) {
-          used.add(item.text);
-          list.push(item);
-        }
-      });
-      const trues = list.filter(function (item) { return item.truth; }).length;
-      if (list.length === count && trues >= 1 && trues < count) {
-        break;
-      }
-    }
-    return list;
+    return {
+      kinds: ['Tautologia', 'Contradição', 'Contingência'],
+      formulas: rng.shuffle(formulas),
+      implications: implications,
+      lockUntil: { files: 0, lock: 0 }
+    };
   }
 
   function pickTemplates(rng, names) {
@@ -814,12 +784,11 @@
   }
 
   function generate(seed) {
-    const cfg = G.config || {};
     return {
       seed: seed,
       r1: room1(seed),
       r2: room2(seed),
-      r3: room3(seed, cfg.naturalsStart, cfg.searchLimit),
+      r3: room3(seed),
       r4: room4(seed),
       r5: room5(seed)
     };
