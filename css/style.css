@@ -660,3 +660,25 @@ button {
     transition-duration: 0.001ms !important;
   }
 }
+
+.options {
+  display: grid;
+  gap: 8px;
+}
+
+.btn.option {
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.btn.option.is-selected {
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(61, 224, 255, 0.35);
+  color: var(--cyan);
+}
+
+.btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
