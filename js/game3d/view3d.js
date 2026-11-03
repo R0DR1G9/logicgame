@@ -31,6 +31,8 @@ let raycaster = null;
 let target = null;
 let currentRoom = 1;
 let winFired = false;
+let bobPhase = 0;
+let bobAmount = 0;
 let lastTime = 0;
 const player = { x: spawn.x, z: spawn.z };
 
@@ -40,7 +42,20 @@ function status() {
     power: state.isSolved('r1power'),
     table: state.isSolved('r1table'),
     safe: state.isSolved('r2safe'),
-    lock: state.isSolved('r3lock')
+    files: state.isSolved('r3files'),
+    lock: state.isSolved('r3lock'),
+    valves: state.isSolved('r4valves'),
+    equiv: state.isSolved('r4equiv'),
+    islands: state.isSolved('r5islands'),
+    relations: state.isSolved('r5relations'),
+    args: state.isSolved('r5args'),
+    unlocks: [
+      state.isSolved('r1table'),
+      state.isSolved('r2safe'),
+      state.isSolved('r3lock'),
+      state.isSolved('r4equiv'),
+      state.isSolved('r5islands') && state.isSolved('r5relations') && state.isSolved('r5args')
+    ]
   };
 }
 
@@ -68,6 +83,7 @@ function applySettings() {
   const settings = G.settings.get();
   camera.fov = settings.fov;
   renderer.setPixelRatio(pixelRatioFor(settings.quality));
+  world.setQuality(settings.quality);
   resize();
 }
 
@@ -79,6 +95,7 @@ function syncUi(modalOpen) {
   const free = controls.state.locked || controls.state.drag;
   if (free) {
     intro = false;
+    G.state.startClock();
   }
   byId('overlay').classList.toggle('hidden', !(running && intro && !paused && !modalOpen));
   byId('pause').classList.toggle('hidden', !(running && paused));
@@ -140,7 +157,7 @@ function interact() {
 }
 
 function placeCamera() {
-  camera.position.set(player.x, EYE, player.z);
+  camera.position.set(player.x, EYE + Math.sin(bobPhase) * 0.022 * bobAmount, player.z);
   camera.rotation.y = controls.state.yaw;
   camera.rotation.x = controls.state.pitch;
 }
@@ -195,7 +212,7 @@ function updateTarget(modalOpen) {
   const prompt = byId('prompt');
   prompt.classList.toggle('hidden', !info || modalOpen || paused || intro);
   if (info) {
-    prompt.textContent = '[E] ' + info.label;
+    byId('prompt-label').textContent = info.label;
   }
   byId('crosshair').classList.toggle('active', Boolean(info) && !paused);
 }
@@ -204,7 +221,8 @@ function checkExit() {
   if (winFired) {
     return;
   }
-  if (world.doorOpenAmount(2) > 0.8 && player.z < doors[2].zNear - WALL / 2) {
+  const last = doors.length - 1;
+  if (world.doorOpenAmount(last) > 0.8 && player.z < doors[last].zNear - WALL / 2) {
     winFired = true;
     G.main.win();
   }
@@ -229,7 +247,14 @@ function frame(now) {
   }
   wasModal = modalOpen;
   if (!modalOpen && !paused && !intro) {
+    const beforeX = player.x;
+    const beforeZ = player.z;
     step(dt);
+    const moved = Math.hypot(player.x - beforeX, player.z - beforeZ);
+    bobPhase += moved * 2.6;
+    bobAmount += ((moved > 0.0005 ? 1 : 0) - bobAmount) * Math.min(1, dt * 8);
+  } else {
+    bobAmount *= 0.9;
   }
   world.update(dt);
   updateRoom();
@@ -246,9 +271,14 @@ function init() {
   const settings = G.settings.get();
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
   renderer.setPixelRatio(pixelRatioFor(settings.quality));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   camera = new THREE.PerspectiveCamera(settings.fov, 1, 0.05, 80);
   camera.rotation.order = 'YXZ';
   world = buildWorld();
+  world.setQuality(settings.quality);
   raycaster = new THREE.Raycaster();
   raycaster.far = REACH;
   controls = createControls(stage, canvas, {
@@ -278,6 +308,7 @@ function setPose(x, z, yaw, pitch) {
 }
 
 function reset(resumePose) {
+  world.refresh();
   world.apply(status(), true);
   world.update(0);
   let pose = spawn;

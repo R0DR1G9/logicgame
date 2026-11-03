@@ -4,43 +4,13 @@
   const ui = G.ui;
   const state = G.state;
 
-  const gridNumbers = [-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
-  const conditionText = '∃x (x ∈ ℕ ∧ x é par ∧ x² < 50)';
-
-  function isNatural(x) {
-    return Number.isInteger(x) && x >= G.config.naturalsStart;
-  }
-
-  function isEven(x) {
-    return x % 2 === 0;
+  function puzzle() {
+    return G.puzzle.r3;
   }
 
   function satisfies(x) {
-    return isNatural(x) && isEven(x) && x * x < 50;
+    return puzzle().satisfies(x);
   }
-
-  function domain() {
-    return E.range(G.config.naturalsStart, G.config.searchLimit);
-  }
-
-  const statements = [
-    {
-      text: '∀x ∈ ℕ (x² < 50)',
-      truth: function () {
-        return E.forall(domain(), function (x) {
-          return x * x < 50;
-        });
-      }
-    },
-    {
-      text: '∃x ∈ ℕ (x é ímpar ∧ x² < 50)',
-      truth: function () {
-        return E.exists(domain(), function (x) {
-          return x % 2 === 1 && x * x < 50;
-        });
-      }
-    }
-  ];
 
   function openScreen() {
     const reading = 'Leitura: existe x tal que x pertence aos naturais, x é par e x ao quadrado é menor que 50. Cada arquivo só pode ser deletado se satisfizer as três condições ao mesmo tempo.';
@@ -48,14 +18,14 @@
     ui.append(
       body,
       ui.el('p', 'modal-text', 'Apenas os arquivos que satisfazem a condição abaixo podem ser deletados.'),
-      ui.el('p', 'formula', conditionText),
+      ui.el('p', 'formula', puzzle().condition),
       ui.el('p', 'modal-text', reading)
     );
     G.main.collect(
       'r3-screen',
       3,
       'Condição de exclusão',
-      conditionText + '\n' + reading
+      puzzle().condition + '\n' + reading
     );
     ui.openModal('Tela do servidor', body);
   }
@@ -83,7 +53,7 @@
     ui.append(
       body,
       ui.el('p', 'modal-text', 'Selecione apenas os arquivos que satisfazem a condição de exclusão e execute.'),
-      ui.el('p', 'formula', conditionText)
+      ui.el('p', 'formula', puzzle().condition)
     );
 
     if (state.isSolved('r3files')) {
@@ -94,7 +64,7 @@
 
     const selected = new Set();
     const grid = ui.el('div', 'file-grid');
-    gridNumbers.forEach(function (number) {
+    puzzle().grid.forEach(function (number) {
       const cell = ui.el('button', 'file-cell');
       cell.type = 'button';
       cell.appendChild(document.createTextNode(String(number)));
@@ -112,7 +82,7 @@
 
     const result = ui.feedback();
     const run = ui.button('Executar exclusão', 'btn primary', function () {
-      const correct = gridNumbers.filter(satisfies);
+      const correct = puzzle().grid.filter(satisfies);
       const missing = correct.filter(function (number) {
         return !selected.has(number);
       });
@@ -154,10 +124,10 @@
       return;
     }
 
-    const toggles = statements.map(function () {
+    const toggles = puzzle().statements.map(function () {
       return ui.createToggle('', null);
     });
-    statements.forEach(function (statement, index) {
+    puzzle().statements.forEach(function (statement, index) {
       const row = ui.el('div', 'statement');
       ui.append(row, ui.el('span', 'statement-text', statement.text), toggles[index].node);
       body.appendChild(row);
@@ -166,12 +136,12 @@
     const result = ui.feedback();
     const unlock = ui.button('Destravar', 'btn primary', function () {
       if (toggles.some(function (toggle) { return toggle.get() === null; })) {
-        ui.setFeedback(result, 'Responda as duas afirmações.', 'bad');
+        ui.setFeedback(result, 'Responda todas as afirmações.', 'bad');
         return;
       }
       state.addAttempt();
-      const wrong = statements.filter(function (statement, index) {
-        return toggles[index].get() !== statement.truth();
+      const wrong = puzzle().statements.filter(function (statement, index) {
+        return toggles[index].get() !== statement.truth;
       }).length;
       if (wrong === 0) {
         state.markSolved('r3lock');
@@ -240,7 +210,7 @@
         list: [
           'Teste cada número da grade contra as três partes da condição: pertencer a ℕ, ser par e ter quadrado menor que 50.',
           'Números negativos não pertencem a ℕ. Confira a convenção no manual.',
-          'x² < 50 vale só até x = 7. Entre os números que sobram, fique apenas com os pares.'
+          'Elimine primeiro os números que falham em alguma das três partes e fique só com os que passam em todas ao mesmo tempo.'
         ]
       };
     }

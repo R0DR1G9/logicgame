@@ -3,8 +3,9 @@
 
   G.config = {
     naturalsStart: 0,
-    totalRooms: 3,
-    searchLimit: 20
+    totalRooms: 5,
+    searchLimit: 20,
+    timeLimitSeconds: 600
   };
 
   G.rooms = G.rooms || {};

@@ -4,21 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Logic Escape</title>
+  <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/game3d.css">
   <link rel="stylesheet" href="css/menu.css">
 </head>
 <body>
   <main class="app">
-    <section id="screen-start" class="screen">
+    <section id="screen-start" class="screen screen-menu">
+      <div class="backdrop" aria-hidden="true">
+        <span class="sym">&and;</span>
+        <span class="sym">&or;</span>
+        <span class="sym">&not;</span>
+        <span class="sym">&rarr;</span>
+        <span class="sym">&forall;</span>
+        <span class="sym">&exist;</span>
+        <span class="sym">&there4;</span>
+        <span class="sym">&equiv;</span>
+        <span class="sym">&isin;</span>
+        <span class="sym">&harr;</span>
+        <span class="sym">&cup;</span>
+        <span class="sym">&cap;</span>
+      </div>
       <p class="tag">SISTEMA TRANCADO</p>
-      <h1>THE LOGIC ESCAPE</h1>
+      <h1 class="title" data-text="THE LOGIC ESCAPE">THE LOGIC ESCAPE</h1>
       <p>Você acordou em um laboratório com o sistema operacional bloqueado. Cada sala é um nível de acesso, e cada trava só cede para quem raciocina com lógica matemática.</p>
-      <p>Ande em primeira pessoa, investigue os objetos, guarde as pistas no caderno e resolva os enigmas para abrir as portas. São 3 salas ligadas.</p>
+      <p>Ande em primeira pessoa, investigue os objetos, guarde as pistas no caderno e resolva os enigmas para abrir as portas. São 5 salas ligadas, com dificuldade crescente, e você tem 10 minutos para sair.</p>
       <nav class="menu" aria-label="Menu principal">
         <button id="btn-new" class="btn primary menu-btn" type="button">Novo jogo</button>
         <button id="btn-continue" class="btn menu-btn" type="button">Continuar jogo</button>
         <p id="continue-info" class="menu-info"></p>
+        <button id="btn-help" class="btn menu-btn" type="button">Como jogar</button>
         <button id="btn-settings" class="btn menu-btn" type="button">Configurações</button>
       </nav>
     </section>
@@ -30,6 +46,7 @@
           <span id="hud-room" class="hud-room"></span>
         </div>
         <div id="hud-progress" class="hud-progress" aria-label="Progresso das salas"></div>
+        <div id="hud-timer" class="hud-timer" aria-label="Tempo restante">00:00</div>
         <div class="hud-actions">
           <button id="btn-notebook" class="btn" type="button">Caderno <span id="note-count" class="badge">0</span></button>
           <button id="btn-hint" class="btn" type="button">Dica</button>
@@ -39,7 +56,7 @@
       <div id="stage" class="stage">
         <canvas id="view" class="view"></canvas>
         <div id="crosshair" class="crosshair"></div>
-        <div id="prompt" class="prompt hidden"></div>
+        <div id="prompt" class="prompt hidden"><kbd class="keycap">E</kbd><span id="prompt-label"></span></div>
         <div id="overlay" class="overlay hidden">
           <p class="overlay-title">CLIQUE PARA ENTRAR NA SALA</p>
           <dl class="overlay-keys">
@@ -66,10 +83,24 @@
       </div>
     </section>
 
+    <section id="screen-lose" class="screen hidden">
+      <p class="tag tag-bad">TEMPO ESGOTADO</p>
+      <h1>VOCÊ NÃO ESCAPOU</h1>
+      <p>O sistema trancou tudo. Uma nova partida traz desafios diferentes.</p>
+      <div class="stats">
+        <div class="stat"><span class="stat-value" id="lose-room">1</span><span class="stat-label">nível alcançado</span></div>
+        <div class="stat"><span class="stat-value" id="lose-attempts">0</span><span class="stat-label">tentativas</span></div>
+      </div>
+      <nav class="menu" aria-label="Fim de tempo">
+        <button id="btn-retry" class="btn primary menu-btn" type="button">Tentar de novo</button>
+        <button id="btn-lose-menu" class="btn menu-btn" type="button">Menu principal</button>
+      </nav>
+    </section>
+
     <section id="screen-end" class="screen hidden">
       <p class="tag">ACESSO TOTAL CONCEDIDO</p>
       <h1>VOCÊ ESCAPOU</h1>
-      <p>Os três níveis de acesso foram desbloqueados com dedução lógica.</p>
+      <p>Todos os níveis de acesso foram desbloqueados com dedução lógica.</p>
       <div class="stats">
         <div class="stat"><span class="stat-value" id="end-time">00:00</span><span class="stat-label">tempo</span></div>
         <div class="stat"><span class="stat-value" id="end-attempts">0</span><span class="stat-label">tentativas</span></div>
@@ -95,14 +126,19 @@
   <div id="toast" class="toast hidden" role="status"></div>
 
   <script src="js/config.js"></script>
+  <script src="js/rng.js"></script>
   <script src="js/logic/evaluator.js"></script>
+  <script src="js/logic/generator.js"></script>
   <script src="js/state.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/help.js"></script>
   <script src="js/save.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/rooms/room1.js"></script>
   <script src="js/rooms/room2.js"></script>
   <script src="js/rooms/room3.js"></script>
+  <script src="js/rooms/room4.js"></script>
+  <script src="js/rooms/room5.js"></script>
   <script src="js/flow.js"></script>
   <script type="module" src="js/game3d/view3d.js"></script>
 </body>
