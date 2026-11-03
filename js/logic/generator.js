@@ -563,6 +563,256 @@
     return { valves: valves, equiv: equiv, lockUntil: 0 };
   }
 
+  const PEOPLE = ['Ana', 'Bruno', 'Carla', 'Davi', 'Eva', 'Fábio'];
+  const PEOPLE_VARS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  function islandStatement(rng, speaker) {
+    const others = PEOPLE_VARS.map(function (name, i) { return i; }).filter(function (i) { return i !== speaker; });
+    const pick = rng.shuffle(others);
+    const x = pick[0];
+    const y = pick[1];
+    const z = pick[2];
+    const vx = E.v(PEOPLE_VARS[x]);
+    const vy = E.v(PEOPLE_VARS[y]);
+    const vz = E.v(PEOPLE_VARS[z]);
+    const nx = PEOPLE[x];
+    const ny = PEOPLE[y];
+    const nz = PEOPLE[z];
+    const kinds = [
+      function () { return { node: vx, text: nx + ' é cavaleiro' }; },
+      function () { return { node: E.not(vx), text: nx + ' é mentiroso' }; },
+      function () { return { node: E.iff(vx, vy), text: nx + ' e ' + ny + ' são do mesmo tipo' }; },
+      function () { return { node: E.not(E.iff(vx, vy)), text: nx + ' e ' + ny + ' são de tipos diferentes' }; },
+      function () { return { node: E.or(vx, vy), text: 'Pelo menos um entre ' + nx + ' e ' + ny + ' é cavaleiro' }; },
+      function () { return { node: E.not(E.and(vx, vy)), text: nx + ' e ' + ny + ' não são ambos cavaleiros' }; },
+      function () { return { node: E.imp(vx, vy), text: 'Se ' + nx + ' é cavaleiro, então ' + ny + ' é cavaleiro' }; },
+      function () { return { node: E.and(vx, E.not(vy)), text: nx + ' é cavaleiro e ' + ny + ' é mentiroso' }; },
+      function () {
+        return {
+          node: E.or(E.or(E.and(vx, E.and(E.not(vy), E.not(vz))), E.and(E.not(vx), E.and(vy, E.not(vz)))), E.and(E.not(vx), E.and(E.not(vy), vz))),
+          text: 'Exatamente um entre ' + nx + ', ' + ny + ' e ' + nz + ' é cavaleiro'
+        };
+      },
+      function () {
+        return {
+          node: E.or(E.or(E.and(vx, vy), E.and(vx, vz)), E.and(vy, vz)),
+          text: 'Pelo menos dois entre ' + nx + ', ' + ny + ' e ' + nz + ' são cavaleiros'
+        };
+      }
+    ];
+    return rng.pick(kinds)();
+  }
+
+  function islandsStage(rng) {
+    for (let tries = 0; tries < 6000; tries++) {
+      const statements = PEOPLE.map(function (name, i) {
+        const item = islandStatement(rng, i);
+        return { speaker: i, text: item.text, node: item.node };
+      });
+      const constraints = statements.map(function (item) {
+        return E.iff(E.v(PEOPLE_VARS[item.speaker]), item.node);
+      });
+      const found = E.models(constraints, PEOPLE_VARS);
+      if (found.length !== 1) {
+        continue;
+      }
+      const knights = PEOPLE_VARS.filter(function (name) { return found[0][name]; }).length;
+      if (knights < 2 || knights > 4) {
+        continue;
+      }
+      return {
+        names: PEOPLE.slice(),
+        statements: statements,
+        solution: PEOPLE_VARS.map(function (name) { return found[0][name]; })
+      };
+    }
+    return null;
+  }
+
+  const RELATION_STATEMENTS = [
+    { text: '∀x ∃y R(x,y)', fn: function (m, n) { return all(n, function (x) { return some(n, function (y) { return m[x][y]; }); }); } },
+    { text: '∃y ∀x R(x,y)', fn: function (m, n) { return some(n, function (y) { return all(n, function (x) { return m[x][y]; }); }); } },
+    { text: '∃x ∀y ¬R(x,y)', fn: function (m, n) { return some(n, function (x) { return all(n, function (y) { return !m[x][y]; }); }); } },
+    { text: '∀x ∀y (R(x,y) → R(y,x))', fn: function (m, n) { return all(n, function (x) { return all(n, function (y) { return !m[x][y] || m[y][x]; }); }); } },
+    { text: '∀x ¬R(x,x)', fn: function (m, n) { return all(n, function (x) { return !m[x][x]; }); } },
+    { text: '∃x ∃y ∃z (R(x,y) ∧ R(y,z) ∧ ¬R(x,z))', fn: function (m, n) { return some(n, function (x) { return some(n, function (y) { return some(n, function (z) { return m[x][y] && m[y][z] && !m[x][z]; }); }); }); } },
+    { text: '∀x ∀y ∀z ((R(x,y) ∧ R(y,z)) → R(x,z))', fn: function (m, n) { return all(n, function (x) { return all(n, function (y) { return all(n, function (z) { return !(m[x][y] && m[y][z]) || m[x][z]; }); }); }); } },
+    { text: '∃x ∀y (R(x,y) ∨ R(y,x))', fn: function (m, n) { return some(n, function (x) { return all(n, function (y) { return m[x][y] || m[y][x]; }); }); } },
+    { text: '∀x ∃y (R(x,y) ∧ R(y,x))', fn: function (m, n) { return all(n, function (x) { return some(n, function (y) { return m[x][y] && m[y][x]; }); }); } },
+    { text: '∃x ∃y (x ≠ y ∧ R(x,y) ∧ R(y,x))', fn: function (m, n) { return some(n, function (x) { return some(n, function (y) { return x !== y && m[x][y] && m[y][x]; }); }); } }
+  ];
+
+  function all(n, fn) {
+    for (let i = 1; i <= n; i++) {
+      if (!fn(i - 1)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function some(n, fn) {
+    for (let i = 1; i <= n; i++) {
+      if (fn(i - 1)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function relationsStage(rng) {
+    const n = 5;
+    for (let tries = 0; tries < 4000; tries++) {
+      const density = 0.25 + rng.next() * 0.35;
+      const matrix = [];
+      for (let i = 0; i < n; i++) {
+        const row = [];
+        for (let j = 0; j < n; j++) {
+          row.push(rng.chance(density));
+        }
+        matrix.push(row);
+      }
+      const chosen = rng.shuffle(RELATION_STATEMENTS).slice(0, 6);
+      const truths = chosen.map(function (item) { return item.fn(matrix, n); });
+      const trues = truths.filter(Boolean).length;
+      if (trues < 2 || trues > 4) {
+        continue;
+      }
+      return {
+        size: n,
+        matrix: matrix,
+        statements: chosen.map(function (item, i) { return { text: item.text, truth: truths[i] }; })
+      };
+    }
+    return null;
+  }
+
+  const ARGUMENT_FORMS = [
+    { premises: ['P → Q', 'P'], conclusion: 'Q' },
+    { premises: ['P → Q', '¬Q'], conclusion: '¬P' },
+    { premises: ['P → Q', 'Q → R'], conclusion: 'P → R' },
+    { premises: ['P ∨ Q', '¬P'], conclusion: 'Q' },
+    { premises: ['P → Q', 'R → S', 'P ∨ R'], conclusion: 'Q ∨ S' },
+    { premises: ['P ∨ Q', '¬P ∨ R'], conclusion: 'Q ∨ R' },
+    { premises: ['¬(P ∧ Q)', 'P'], conclusion: '¬Q' },
+    { premises: ['P → Q', 'Q'], conclusion: 'P' },
+    { premises: ['P → Q', '¬P'], conclusion: '¬Q' },
+    { premises: ['P → Q', 'R → Q'], conclusion: 'P → R' },
+    { premises: ['P ∨ Q', 'P'], conclusion: '¬Q' },
+    { premises: ['P → (Q ∨ R)', 'Q'], conclusion: 'P' },
+    { premises: ['P ↔ Q', '¬P'], conclusion: '¬Q' },
+    { premises: ['P → Q'], conclusion: '¬P ∨ Q' },
+    { premises: ['P ∧ Q → R', 'P'], conclusion: 'Q → R' },
+    { premises: ['P → R', 'Q → R'], conclusion: 'P ∨ Q → R' }
+  ];
+
+  function parseSimple(text) {
+    const tokens = text.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ').replace(/¬/g, ' ¬ ').split(/\s+/).filter(Boolean);
+    let pos = 0;
+    function atom() {
+      const t = tokens[pos++];
+      if (t === '¬') {
+        return E.not(atom());
+      }
+      if (t === '(') {
+        const inner = expr();
+        pos++;
+        return inner;
+      }
+      return E.v(t);
+    }
+    function conj() {
+      let left = atom();
+      while (tokens[pos] === '∧') {
+        pos++;
+        left = E.and(left, atom());
+      }
+      return left;
+    }
+    function disj() {
+      let left = conj();
+      while (tokens[pos] === '∨') {
+        pos++;
+        left = E.or(left, conj());
+      }
+      return left;
+    }
+    function expr() {
+      let left = disj();
+      while (tokens[pos] === '→' || tokens[pos] === '↔') {
+        const op = tokens[pos++];
+        const right = disj();
+        left = op === '→' ? E.imp(left, right) : E.iff(left, right);
+      }
+      return left;
+    }
+    return expr();
+  }
+
+  function substitute(node, map) {
+    if (node.type === 'var') {
+      return map[node.name] || node;
+    }
+    return { type: node.type, args: node.args.map(function (child) { return substitute(child, map); }) };
+  }
+
+  function argumentsStage(rng) {
+    const names = ['A', 'B', 'C', 'D'];
+    for (let tries = 0; tries < 3000; tries++) {
+      const forms = rng.shuffle(ARGUMENT_FORMS).slice(0, 5);
+      const items = [];
+      for (let i = 0; i < forms.length; i++) {
+        const map = {};
+        ['P', 'Q', 'R', 'S'].forEach(function (symbol) {
+          const a = E.v(rng.pick(names));
+          const b = E.v(rng.pick(names.filter(function (n) { return n !== a.name; })));
+          const roll = rng.next();
+          if (roll < 0.5) {
+            map[symbol] = a;
+          } else if (roll < 0.7) {
+            map[symbol] = E.not(a);
+          } else if (roll < 0.85) {
+            map[symbol] = E.and(a, b);
+          } else {
+            map[symbol] = E.or(a, b);
+          }
+        });
+        const premises = forms[i].premises.map(function (text) { return substitute(parseSimple(text), map); });
+        const conclusion = substitute(parseSimple(forms[i].conclusion), map);
+        const texts = premises.concat([conclusion]).map(function (node) { return E.render(node); });
+        if (texts.some(function (text) { return text.length > 30; })) {
+          break;
+        }
+        items.push({
+          premises: premises.map(function (node) { return { node: node, text: E.render(node) }; }),
+          conclusion: { node: conclusion, text: E.render(conclusion) },
+          valid: E.entails(premises, conclusion, names)
+        });
+      }
+      if (items.length < 5) {
+        continue;
+      }
+      const valid = items.filter(function (item) { return item.valid; }).length;
+      const uniqueTexts = new Set(items.map(function (item) { return item.conclusion.text + item.premises.map(function (p) { return p.text; }).join(); }));
+      if (valid < 2 || valid > 3 || uniqueTexts.size < 5) {
+        continue;
+      }
+      return { names: names, items: items };
+    }
+    return null;
+  }
+
+  function room5(seed) {
+    const rng = rngFor(seed, 5);
+    const islands = islandsStage(rng);
+    const relations = relationsStage(rng);
+    const args = argumentsStage(rng);
+    if (!islands || !relations || !args) {
+      return null;
+    }
+    return { islands: islands, relations: relations, args: args, lockUntil: { islands: 0, relations: 0, args: 0 } };
+  }
+
   function generate(seed) {
     const cfg = G.config || {};
     return {
@@ -570,11 +820,12 @@
       r1: room1(seed),
       r2: room2(seed),
       r3: room3(seed, cfg.naturalsStart, cfg.searchLimit),
-      r4: room4(seed)
+      r4: room4(seed),
+      r5: room5(seed)
     };
   }
 
-  const api = { generate: generate, room1: room1, room2: room2, room3: room3, room4: room4, describe: describe, equivalent: equivalent };
+  const api = { generate: generate, room1: room1, room2: room2, room3: room3, room4: room4, room5: room5, describe: describe, equivalent: equivalent };
   G.generator = api;
 
   if (typeof module !== 'undefined' && module.exports) {

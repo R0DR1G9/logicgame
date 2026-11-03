@@ -6,8 +6,9 @@ const gen = require(path + 'logic/generator.js');
 const assert = require('assert');
 const E = globalThis.LogicGame.evaluator;
 const N = Number(process.argv[2] || 3000);
+const PEOPLE_NAME = ['Ana', 'Bruno', 'Carla', 'Davi', 'Eva', 'Fábio'];
 const seen = { f: new Set(), c: new Set(), g: new Set(), all: new Set() };
-let fail = { r1: 0, r2: 0, r3: 0, r4: 0 };
+let fail = { r1: 0, r2: 0, r3: 0, r4: 0, r5: 0 };
 const t0 = Date.now();
 for (let seed = 1; seed <= N; seed++) {
   const p = gen.generate(seed * 2654435761 % 4294967296);
@@ -15,6 +16,19 @@ for (let seed = 1; seed <= N; seed++) {
   if (!p.r2) { fail.r2++; continue; }
   if (!p.r3) { fail.r3++; continue; }
   if (!p.r4) { fail.r4++; continue; }
+  if (!p.r5) { fail.r5++; continue; }
+  const is = p.r5.islands;
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const cons = is.statements.map((st) => E.iff(E.v(letters[st.speaker]), st.node));
+  assert.strictEqual(E.models(cons, letters).length, 1, 'ilha unica');
+  const rel = p.r5.relations;
+  assert.strictEqual(rel.statements.length, 6);
+  const tcount = rel.statements.filter((x) => x.truth).length;
+  assert.ok(tcount >= 2 && tcount <= 4);
+  assert.strictEqual(new Set(rel.statements.map((x) => x.text)).size, 6);
+  const ar = p.r5.args;
+  assert.strictEqual(ar.items.length, 5);
+  ar.items.forEach((it) => assert.strictEqual(it.valid, E.entails(it.premises.map((x) => x.node), it.conclusion.node, ar.names)));
   const v = p.r4.valves;
   assert.ok(v.premises.length >= 6 && v.premises.length <= 8, 'premissas r4');
   assert.strictEqual(E.models(v.premises.map((x) => x.node), v.names).length, 1, 'valvulas unicas');
@@ -44,5 +58,8 @@ for (let seed = 1; seed <= N; seed++) {
 console.log('falhas', JSON.stringify(fail), 'ms', Date.now() - t0);
 console.log('distintos r1', seen.f.size, 'r2', seen.c.size, 'r3', seen.g.size, 'partidas', seen.all.size, 'de', N);
 const s = gen.generate(12345);
+console.log(s.r5.islands.statements.map((x) => PEOPLE_NAME[x.speaker] + ': ' + x.text).join(' | '), '->', s.r5.islands.solution.map((b) => (b ? 'C' : 'M')).join(''));
+console.log(s.r5.relations.matrix.map((r) => r.map((b) => (b ? 1 : 0)).join('')).join('/'), s.r5.relations.statements.map((x) => x.text + '=' + x.truth).join(' ; '));
+console.log(s.r5.args.items.map((it) => it.premises.map((x) => x.text).join(', ') + ' => ' + it.conclusion.text + ' ' + it.valid).join(' || '));
 console.log(s.r1.label, '|', s.r2.key, '|', s.r2.premises.map((x) => x.text).join(' / '), '|', s.r2.code, '|', s.r3.condition, s.r3.grid.join(','), '->', s.r3.answer.join(','), '|', s.r3.statements.map((x) => x.text + '=' + x.truth).join(' ; '));
 console.log(s.r4.valves.premises.map((x) => x.formal).join(' | '), '||', s.r4.equiv.target.text, '=>', s.r4.equiv.options.map((o, i) => (i === s.r4.equiv.answerIndex ? '*' : '') + o.text).join(' ; '));
