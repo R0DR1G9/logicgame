@@ -5,7 +5,7 @@
     naturalsStart: 0,
     totalRooms: 5,
     searchLimit: 20,
-    timeLimitSeconds: 900
+    timeLimitSeconds: 600
   };
 
   G.rooms = G.rooms || {};
