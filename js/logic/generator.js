@@ -599,62 +599,87 @@
     return null;
   }
 
-  const RELATION_STATEMENTS = [
-    { text: '∀x ∃y R(x,y)', fn: function (m, n) { return all(n, function (x) { return some(n, function (y) { return m[x][y]; }); }); } },
-    { text: '∃y ∀x R(x,y)', fn: function (m, n) { return some(n, function (y) { return all(n, function (x) { return m[x][y]; }); }); } },
-    { text: '∃x ∀y ¬R(x,y)', fn: function (m, n) { return some(n, function (x) { return all(n, function (y) { return !m[x][y]; }); }); } },
-    { text: '∀x ∀y (R(x,y) → R(y,x))', fn: function (m, n) { return all(n, function (x) { return all(n, function (y) { return !m[x][y] || m[y][x]; }); }); } },
-    { text: '∀x ¬R(x,x)', fn: function (m, n) { return all(n, function (x) { return !m[x][x]; }); } },
-    { text: '∃x ∃y ∃z (R(x,y) ∧ R(y,z) ∧ ¬R(x,z))', fn: function (m, n) { return some(n, function (x) { return some(n, function (y) { return some(n, function (z) { return m[x][y] && m[y][z] && !m[x][z]; }); }); }); } },
-    { text: '∀x ∀y ∀z ((R(x,y) ∧ R(y,z)) → R(x,z))', fn: function (m, n) { return all(n, function (x) { return all(n, function (y) { return all(n, function (z) { return !(m[x][y] && m[y][z]) || m[x][z]; }); }); }); } },
-    { text: '∃x ∀y (R(x,y) ∨ R(y,x))', fn: function (m, n) { return some(n, function (x) { return all(n, function (y) { return m[x][y] || m[y][x]; }); }); } },
-    { text: '∀x ∃y (R(x,y) ∧ R(y,x))', fn: function (m, n) { return all(n, function (x) { return some(n, function (y) { return m[x][y] && m[y][x]; }); }); } },
-    { text: '∃x ∃y (x ≠ y ∧ R(x,y) ∧ R(y,x))', fn: function (m, n) { return some(n, function (x) { return some(n, function (y) { return x !== y && m[x][y] && m[y][x]; }); }); } }
-  ];
-
-  function all(n, fn) {
-    for (let i = 1; i <= n; i++) {
-      if (!fn(i - 1)) {
-        return false;
-      }
+  function tableauFormula(rng, depth, names) {
+    if (depth === 0) {
+      const atom = E.v(rng.pick(names));
+      return rng.chance(0.35) ? E.not(atom) : atom;
     }
-    return true;
+    const left = tableauFormula(rng, depth - 1, names);
+    const right = tableauFormula(rng, depth - 1, names);
+    const node = rng.pick([E.and, E.or, E.imp, E.imp, E.iff])(left, right);
+    return rng.chance(0.2) ? E.not(node) : node;
   }
 
-  function some(n, fn) {
-    for (let i = 1; i <= n; i++) {
-      if (fn(i - 1)) {
-        return true;
-      }
+  function redundantNode(node) {
+    if (node.type === 'var') {
+      return false;
     }
-    return false;
+    if (node.type === 'not') {
+      return redundantNode(node.args[0]);
+    }
+    const left = renderPrecedence(node.args[0]);
+    const right = renderPrecedence(node.args[1]);
+    if (left === right || '¬' + left === right || '¬' + right === left) {
+      return true;
+    }
+    return redundantNode(node.args[0]) || redundantNode(node.args[1]);
   }
 
-  function relationsStage(rng) {
-    const n = 5;
+  function tableauSet(rng, names, wantSat) {
     for (let tries = 0; tries < 4000; tries++) {
-      const density = 0.25 + rng.next() * 0.35;
-      const matrix = [];
-      for (let i = 0; i < n; i++) {
-        const row = [];
-        for (let j = 0; j < n; j++) {
-          row.push(rng.chance(density));
-        }
-        matrix.push(row);
+      const count = rng.int(2, 3);
+      const nodes = [];
+      for (let i = 0; i < count; i++) {
+        nodes.push(tableauFormula(rng, 2, names));
       }
-      const chosen = rng.shuffle(RELATION_STATEMENTS).slice(0, 6);
-      const truths = chosen.map(function (item) { return item.fn(matrix, n); });
-      const trues = truths.filter(Boolean).length;
-      if (trues < 2 || trues > 4) {
+      const texts = nodes.map(function (node) { return renderPrecedence(node); });
+      if (texts.some(function (text) { return text.length > 26; }) || new Set(texts).size < count) {
         continue;
       }
+      if (nodes.some(function (node) { return E.variablesOf(node).length < 2 || redundantNode(node); })) {
+        continue;
+      }
+      const alone = nodes.map(function (node) { return E.models([node], names).length; });
+      if (alone.some(function (n) { return n === 0 || n === Math.pow(2, names.length); })) {
+        continue;
+      }
+      const models = E.models(nodes, names).length;
+      if (wantSat) {
+        if (models < 1 || models > 3) {
+          continue;
+        }
+      } else {
+        if (models !== 0) {
+          continue;
+        }
+        const minimal = nodes.every(function (omit, skip) {
+          const rest = nodes.filter(function (node, i) { return i !== skip; });
+          return E.models(rest, names).length > 0;
+        });
+        if (!minimal) {
+          continue;
+        }
+      }
       return {
-        size: n,
-        matrix: matrix,
-        statements: chosen.map(function (item, i) { return { text: item.text, truth: truths[i] }; })
+        formulas: nodes.map(function (node, i) { return { node: node, text: texts[i] }; }),
+        sat: wantSat
       };
     }
     return null;
+  }
+
+  function tableauStage(rng) {
+    const names = ['A', 'B', 'C', 'D'];
+    const satCount = rng.int(2, 3);
+    const sets = [];
+    for (let i = 0; i < 5; i++) {
+      const set = tableauSet(rng, names, i < satCount);
+      if (!set) {
+        return null;
+      }
+      sets.push(set);
+    }
+    return { names: names, sets: rng.shuffle(sets) };
   }
 
   const ARGUMENT_FORMS = [
@@ -775,12 +800,12 @@
   function room5(seed) {
     const rng = rngFor(seed, 5);
     const islands = islandsStage(rng);
-    const relations = relationsStage(rng);
+    const tableau = tableauStage(rng);
     const args = argumentsStage(rng);
-    if (!islands || !relations || !args) {
+    if (!islands || !tableau || !args) {
       return null;
     }
-    return { islands: islands, relations: relations, args: args, lockUntil: { islands: 0, relations: 0, args: 0 } };
+    return { islands: islands, tableau: tableau, args: args, lockUntil: { islands: 0, tableau: 0, args: 0 } };
   }
 
   function generate(seed) {
