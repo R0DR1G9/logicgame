@@ -2,9 +2,7 @@
   const G = (root.LogicGame = root.LogicGame || {});
 
   G.config = {
-    naturalsStart: 0,
     totalRooms: 5,
-    searchLimit: 20,
     timeLimitSeconds: 600
   };
 

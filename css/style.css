@@ -532,31 +532,6 @@ button {
   }
 }
 
-.file-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-
-.file-cell {
-  padding: 14px 6px;
-  border: 2px solid var(--line);
-  border-radius: 8px;
-  background: #0a1424;
-  font-size: 1.3rem;
-}
-
-.file-cell small {
-  display: block;
-  color: var(--muted);
-  font-size: 0.65rem;
-}
-
-.file-cell.is-selected {
-  border-color: var(--red);
-  background: rgba(255, 92, 122, 0.14);
-}
-
 .statement {
   display: flex;
   align-items: center;
