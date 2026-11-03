@@ -38,19 +38,30 @@
     return build(depth);
   }
 
-  function describe(node) {
+  const STYLES = {
+    suspect: {
+      yes: function (name) { return name + ' é culpado'; },
+      no: function (name) { return name + ' não é culpado'; }
+    },
+    valve: {
+      yes: function (name) { return 'a válvula ' + name + ' está aberta'; },
+      no: function (name) { return 'a válvula ' + name + ' está fechada'; }
+    }
+  };
+
+  function textOf(node, style) {
     if (node.type === 'var') {
-      return node.name + ' é culpado';
+      return style.yes(node.name);
     }
     if (node.type === 'not') {
       const inner = node.args[0];
       if (inner.type === 'var') {
-        return inner.name + ' não é culpado';
+        return style.no(inner.name);
       }
-      return 'Não é verdade que ' + describe(inner);
+      return 'não é verdade que ' + textOf(inner, style);
     }
-    const left = describe(node.args[0]);
-    const right = describe(node.args[1]);
+    const left = textOf(node.args[0], style);
+    const right = textOf(node.args[1], style);
     if (node.type === 'and') {
       return left + ' e ' + right;
     }
@@ -58,9 +69,14 @@
       return left + ' ou ' + right;
     }
     if (node.type === 'imp') {
-      return 'Se ' + left + ', então ' + right;
+      return 'se ' + left + ', então ' + right;
     }
     return left + ' se, e somente se, ' + right;
+  }
+
+  function describe(node, styleName) {
+    const text = textOf(node, STYLES[styleName || 'suspect']);
+    return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   function redundant(node) {
@@ -308,17 +324,257 @@
     return list;
   }
 
+  function pickTemplates(rng, names) {
+    const distinct = function (count) {
+      return rng.shuffle(names).slice(0, count).map(function (name) { return E.v(name); });
+    };
+    const makers = [
+      function () { const v = distinct(1); return { node: v[0], literal: true }; },
+      function () { const v = distinct(1); return { node: E.not(v[0]), literal: true }; },
+      function () { const v = distinct(2); return { node: E.imp(v[0], v[1]) }; },
+      function () { const v = distinct(2); return { node: E.imp(v[0], E.not(v[1])) }; },
+      function () { const v = distinct(2); return { node: E.or(v[0], v[1]) }; },
+      function () { const v = distinct(2); return { node: E.or(E.not(v[0]), v[1]) }; },
+      function () { const v = distinct(2); return { node: E.iff(v[0], v[1]) }; },
+      function () { const v = distinct(2); return { node: E.not(E.iff(v[0], v[1])) }; },
+      function () { const v = distinct(2); return { node: E.not(E.and(v[0], v[1])) }; },
+      function () { const v = distinct(3); return { node: E.imp(E.and(v[0], v[1]), v[2]) }; },
+      function () { const v = distinct(3); return { node: E.imp(E.or(v[0], v[1]), v[2]) }; },
+      function () { const v = distinct(3); return { node: E.imp(v[0], E.and(v[1], v[2])) }; },
+      function () { const v = distinct(3); return { node: E.imp(v[0], E.or(v[1], v[2])) }; },
+      function () { const v = distinct(3); return { node: E.or(E.and(v[0], v[1]), v[2]) }; },
+      function () { const v = distinct(3); return { node: E.iff(v[0], E.and(v[1], v[2])) }; },
+      function () { const v = distinct(3); return { node: E.iff(v[0], E.or(v[1], v[2])) }; },
+      function () { const v = distinct(3); return { node: E.imp(E.not(v[0]), E.or(v[1], v[2])) }; }
+    ];
+    return makers[rng.int(0, makers.length - 1)]();
+  }
+
+  function valvesStage(rng) {
+    const names = ['A', 'B', 'C', 'D', 'E', 'F'];
+    for (let tries = 0; tries < 2000; tries++) {
+      const env = {};
+      let open = 0;
+      names.forEach(function (name) {
+        env[name] = rng.chance(0.5);
+        open += env[name] ? 1 : 0;
+      });
+      if (open < 2 || open > 4) {
+        continue;
+      }
+      const seenText = new Set();
+      let list = [];
+      for (let k = 0; k < 400 && list.length < 40; k++) {
+        const item = pickTemplates(rng, names);
+        const text = E.render(item.node);
+        if (seenText.has(text) || !E.evaluate(item.node, env)) {
+          continue;
+        }
+        seenText.add(text);
+        list.push(item);
+      }
+      if (E.models(list.map(function (item) { return item.node; }), names).length !== 1) {
+        continue;
+      }
+      const order = rng.shuffle(list).sort(function (a, b) {
+        return (b.literal ? 1 : 0) - (a.literal ? 1 : 0);
+      });
+      order.forEach(function (item) {
+        if (list.length <= 6) {
+          return;
+        }
+        const rest = list.filter(function (other) { return other !== item; });
+        if (E.models(rest.map(function (other) { return other.node; }), names).length === 1) {
+          list = rest;
+        }
+      });
+      if (list.length > 8 || list.filter(function (item) { return item.literal; }).length > 1) {
+        continue;
+      }
+      const premises = rng.shuffle(list).map(function (item) {
+        return { node: item.node, formal: E.render(item.node), text: describe(item.node, 'valve') + '.' };
+      });
+      return { names: names, premises: premises, solution: env };
+    }
+    return null;
+  }
+
+  function subPaths(node, path, out) {
+    out.push(path);
+    if (node.type !== 'var') {
+      node.args.forEach(function (child, i) {
+        subPaths(child, path.concat(i), out);
+      });
+    }
+    return out;
+  }
+
+  function getAt(node, path) {
+    return path.reduce(function (current, i) { return current.args[i]; }, node);
+  }
+
+  function setAt(node, path, replacement) {
+    if (path.length === 0) {
+      return replacement;
+    }
+    const args = node.args.slice();
+    args[path[0]] = setAt(node.args[path[0]], path.slice(1), replacement);
+    return { type: node.type, args: args };
+  }
+
+  function simplify(node) {
+    if (node.type === 'var') {
+      return node;
+    }
+    const args = node.args.map(simplify);
+    if (node.type === 'not' && args[0].type === 'not') {
+      return args[0].args[0];
+    }
+    return { type: node.type, args: args };
+  }
+
+  function equivalents(node) {
+    const a = node.args && node.args[0];
+    const b = node.args && node.args[1];
+    switch (node.type) {
+      case 'imp':
+        return [E.or(E.not(a), b), E.imp(E.not(b), E.not(a)), E.not(E.and(a, E.not(b)))];
+      case 'and':
+        return [E.and(b, a), E.not(E.or(E.not(a), E.not(b)))];
+      case 'or':
+        return [E.or(b, a), E.not(E.and(E.not(a), E.not(b))), E.imp(E.not(a), b)];
+      case 'iff':
+        return [E.iff(b, a), E.and(E.imp(a, b), E.imp(b, a)), E.or(E.and(a, b), E.and(E.not(a), E.not(b)))];
+      case 'not':
+        if (a.type === 'and') {
+          return [E.or(E.not(a.args[0]), E.not(a.args[1])), E.imp(a.args[0], E.not(a.args[1]))];
+        }
+        if (a.type === 'or') {
+          return [E.and(E.not(a.args[0]), E.not(a.args[1]))];
+        }
+        if (a.type === 'imp') {
+          return [E.and(a.args[0], E.not(a.args[1]))];
+        }
+        if (a.type === 'iff') {
+          return [E.iff(a.args[0], E.not(a.args[1])), E.iff(E.not(a.args[0]), a.args[1])];
+        }
+        return [];
+      default:
+        return [];
+    }
+  }
+
+  function rewrite(node, rng, steps) {
+    let current = node;
+    for (let i = 0; i < steps; i++) {
+      const paths = rng.shuffle(subPaths(current, [], []));
+      for (let k = 0; k < paths.length; k++) {
+        const options = equivalents(getAt(current, paths[k]));
+        if (options.length > 0) {
+          current = simplify(setAt(current, paths[k], rng.pick(options)));
+          break;
+        }
+      }
+    }
+    return current;
+  }
+
+  function corrupt(node, rng, names) {
+    const paths = rng.shuffle(subPaths(node, [], []));
+    for (let k = 0; k < paths.length; k++) {
+      const at = getAt(node, paths[k]);
+      let replacement = null;
+      if (at.type === 'and') {
+        replacement = E.or(at.args[0], at.args[1]);
+      } else if (at.type === 'or') {
+        replacement = E.and(at.args[0], at.args[1]);
+      } else if (at.type === 'imp') {
+        replacement = rng.chance(0.5) ? E.imp(at.args[1], at.args[0]) : E.and(at.args[0], at.args[1]);
+      } else if (at.type === 'iff') {
+        replacement = E.imp(at.args[0], at.args[1]);
+      } else if (at.type === 'var') {
+        replacement = rng.chance(0.5) ? E.not(at) : E.v(rng.pick(names));
+      } else if (at.type === 'not' && rng.chance(0.5)) {
+        replacement = at.args[0];
+      }
+      if (replacement) {
+        return simplify(setAt(node, paths[k], replacement));
+      }
+    }
+    return node;
+  }
+
+  function equivalent(a, b, names) {
+    return E.allAssignments(names).every(function (env) {
+      return E.evaluate(a, env) === E.evaluate(b, env);
+    });
+  }
+
+  function equivalenceStage(rng) {
+    const names = ['P', 'Q', 'R'];
+    for (let tries = 0; tries < 2000; tries++) {
+      const target = randomFormula(rng, names, 3);
+      const used = E.variablesOf(target);
+      const text = E.render(target);
+      const table = E.truthTable(target);
+      const trues = table.filter(function (row) { return row.value; }).length;
+      if (used.length < 3 || redundant(target) || trues === 0 || trues === table.length || text.length < 12 || text.length > 30) {
+        continue;
+      }
+      const seen = new Set([text]);
+      const correct = rewrite(target, rng, rng.int(2, 3));
+      const correctText = E.render(correct);
+      if (seen.has(correctText) || correctText.length > 42 || !equivalent(target, correct, names)) {
+        continue;
+      }
+      seen.add(correctText);
+      const options = [{ text: correctText, node: correct, right: true }];
+      for (let k = 0; k < 60 && options.length < 4; k++) {
+        const base = rng.chance(0.7) ? rewrite(target, rng, rng.int(1, 2)) : target;
+        const bad = corrupt(base, rng, names);
+        const badText = E.render(bad);
+        if (seen.has(badText) || badText.length > 42 || equivalent(target, bad, names)) {
+          continue;
+        }
+        seen.add(badText);
+        options.push({ text: badText, node: bad, right: false });
+      }
+      if (options.length < 4) {
+        continue;
+      }
+      const shuffled = rng.shuffle(options);
+      return {
+        names: names,
+        target: { node: target, text: text },
+        options: shuffled.map(function (item) { return { text: item.text, node: item.node }; }),
+        answerIndex: shuffled.findIndex(function (item) { return item.right; })
+      };
+    }
+    return null;
+  }
+
+  function room4(seed) {
+    const rng = rngFor(seed, 4);
+    const valves = valvesStage(rng);
+    const equiv = equivalenceStage(rng);
+    if (!valves || !equiv) {
+      return null;
+    }
+    return { valves: valves, equiv: equiv, lockUntil: 0 };
+  }
+
   function generate(seed) {
     const cfg = G.config || {};
     return {
       seed: seed,
       r1: room1(seed),
       r2: room2(seed),
-      r3: room3(seed, cfg.naturalsStart, cfg.searchLimit)
+      r3: room3(seed, cfg.naturalsStart, cfg.searchLimit),
+      r4: room4(seed)
     };
   }
 
-  const api = { generate: generate, room1: room1, room2: room2, room3: room3, describe: describe };
+  const api = { generate: generate, room1: room1, room2: room2, room3: room3, room4: room4, describe: describe, equivalent: equivalent };
   G.generator = api;
 
   if (typeof module !== 'undefined' && module.exports) {

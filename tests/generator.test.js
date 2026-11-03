@@ -7,13 +7,23 @@ const assert = require('assert');
 const E = globalThis.LogicGame.evaluator;
 const N = Number(process.argv[2] || 3000);
 const seen = { f: new Set(), c: new Set(), g: new Set(), all: new Set() };
-let fail = { r1: 0, r2: 0, r3: 0 };
+let fail = { r1: 0, r2: 0, r3: 0, r4: 0 };
 const t0 = Date.now();
 for (let seed = 1; seed <= N; seed++) {
   const p = gen.generate(seed * 2654435761 % 4294967296);
   if (!p.r1) { fail.r1++; continue; }
   if (!p.r2) { fail.r2++; continue; }
   if (!p.r3) { fail.r3++; continue; }
+  if (!p.r4) { fail.r4++; continue; }
+  const v = p.r4.valves;
+  assert.ok(v.premises.length >= 6 && v.premises.length <= 8, 'premissas r4');
+  assert.strictEqual(E.models(v.premises.map((x) => x.node), v.names).length, 1, 'valvulas unicas');
+  assert.ok(v.premises.every((x) => E.evaluate(x.node, v.solution)));
+  const q = p.r4.equiv;
+  assert.strictEqual(q.options.length, 4);
+  assert.strictEqual(q.options.filter((o) => gen.equivalent(q.target.node, o.node, q.names)).length, 1, 'uma equivalente');
+  assert.ok(gen.equivalent(q.target.node, q.options[q.answerIndex].node, q.names));
+  assert.strictEqual(new Set(q.options.map((o) => o.text)).size, 4);
   const t = E.truthTable(p.r1.formula);
   assert.ok(t.some((r) => r.value) && t.some((r) => !r.value));
   assert.strictEqual(p.r2.premises.length, 5);
@@ -35,3 +45,4 @@ console.log('falhas', JSON.stringify(fail), 'ms', Date.now() - t0);
 console.log('distintos r1', seen.f.size, 'r2', seen.c.size, 'r3', seen.g.size, 'partidas', seen.all.size, 'de', N);
 const s = gen.generate(12345);
 console.log(s.r1.label, '|', s.r2.key, '|', s.r2.premises.map((x) => x.text).join(' / '), '|', s.r2.code, '|', s.r3.condition, s.r3.grid.join(','), '->', s.r3.answer.join(','), '|', s.r3.statements.map((x) => x.text + '=' + x.truth).join(' ; '));
+console.log(s.r4.valves.premises.map((x) => x.formal).join(' | '), '||', s.r4.equiv.target.text, '=>', s.r4.equiv.options.map((o, i) => (i === s.r4.equiv.answerIndex ? '*' : '') + o.text).join(' ; '));
