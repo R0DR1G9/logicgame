@@ -103,7 +103,7 @@
     load: function (data) {
       const next = fresh(Number(data.seed) >>> 0);
       next.deadline = Number(data.deadline) > 0 ? Number(data.deadline) : null;
-      next.room = Number(data.room) >= 1 && Number(data.room) <= 3 ? Number(data.room) : 1;
+      next.room = Number(data.room) >= 1 && Number(data.room) <= G.config.totalRooms ? Number(data.room) : 1;
       next.solved = data.solved && typeof data.solved === 'object' ? data.solved : {};
       next.notes = Array.isArray(data.notes) ? data.notes : [];
       next.hintIndex = data.hintIndex && typeof data.hintIndex === 'object' ? data.hintIndex : {};

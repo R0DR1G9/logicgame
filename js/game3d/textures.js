@@ -530,3 +530,119 @@ export function coverTexture() {
     center(ctx, 'exclua os arquivos', w / 2, 262, '#7f95b3');
   }).texture;
 }
+
+export function lawsTexture() {
+  return make(1200, 700, function (ctx, w, h) {
+    ctx.fillStyle = '#1a0f14';
+    ctx.fillRect(0, 0, w, h);
+    frame(ctx, w, h, '#ff5c7a', 10);
+    font(ctx, 50);
+    center(ctx, 'LEIS DE EQUIVALÊNCIA', w / 2, 72, '#ff5c7a');
+    const blocks = [
+      ['DE MORGAN', '¬(P ∧ Q) ≡ ¬P ∨ ¬Q     ¬(P ∨ Q) ≡ ¬P ∧ ¬Q'],
+      ['CONTRAPOSITIVA', 'P → Q ≡ ¬Q → ¬P'],
+      ['IMPLICAÇÃO MATERIAL', 'P → Q ≡ ¬P ∨ Q     ¬(P → Q) ≡ P ∧ ¬Q'],
+      ['BICONDICIONAL', 'P ↔ Q ≡ (P → Q) ∧ (Q → P)'],
+      ['DUPLA NEGAÇÃO', '¬¬P ≡ P']
+    ];
+    blocks.forEach(function (block, i) {
+      const y = 150 + i * 106;
+      font(ctx, 28);
+      ctx.fillStyle = '#ffb347';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(block[0], 70, y);
+      font(ctx, fitSize(block[1], 1060, 40), 'normal');
+      ctx.fillStyle = '#d6e4f5';
+      ctx.fillText(block[1], 70, y + 46);
+      ctx.fillStyle = 'rgba(255,92,122,0.25)';
+      ctx.fillRect(70, y + 82, w - 140, 2);
+    });
+  }).texture;
+}
+
+export function premisesTexture() {
+  const made = make(1200, 700, function () {});
+  function draw() {
+    const p = puzzle();
+    const list = p && p.r4 ? p.r4.valves.premises : [];
+    made.redraw(function (ctx, w, h) {
+      ctx.fillStyle = '#10161f';
+      ctx.fillRect(0, 0, w, h);
+      frame(ctx, w, h, '#ffb347', 10);
+      font(ctx, 48);
+      center(ctx, 'REGISTRO DO REATOR', w / 2, 62, '#ffb347');
+      font(ctx, 26, 'normal');
+      center(ctx, 'V = válvula aberta     F = válvula fechada     tudo abaixo é verdadeiro', w / 2, 112, '#7f95b3');
+      list.forEach(function (premise, i) {
+        const line = (i + 1) + '.  ' + premise.formal;
+        font(ctx, fitSize(line, 1040, 44), 'normal');
+        ctx.fillStyle = '#d6e4f5';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(line, 80, 170 + i * 66);
+      });
+    });
+  }
+  draw();
+  return { texture: made.texture, set: draw };
+}
+
+export function valvesFaceTexture() {
+  return make(720, 640, function (ctx, w, h) {
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, '#3a465e');
+    g.addColorStop(1, '#1a2130');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    frame(ctx, w, h, '#ff5c7a', 10);
+    font(ctx, 40);
+    center(ctx, 'VÁLVULAS DO REATOR', w / 2, 56, '#ff5c7a');
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    letters.forEach(function (letter, i) {
+      const cx = 130 + (i % 3) * 230;
+      const cy = 235 + Math.floor(i / 3) * 215;
+      ctx.fillStyle = '#0a0f18';
+      ctx.fillRect(cx - 80, cy - 80, 160, 160);
+      ctx.strokeStyle = '#59627a';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(cx - 80, cy - 80, 160, 160);
+      font(ctx, 44);
+      center(ctx, letter, cx, cy + 112 - 24, '#d6e4f5');
+    });
+  }).texture;
+}
+
+export function oracleTexture() {
+  const made = make(512, 300, function () {});
+  function draw(mode) {
+    const p = puzzle();
+    const text = p && p.r4 ? 'F = ' + p.r4.equiv.target.text : '';
+    made.redraw(function (ctx, w, h) {
+      ctx.fillStyle = mode === 'locked' ? '#05080d' : '#04141c';
+      ctx.fillRect(0, 0, w, h);
+      if (mode === 'locked') {
+        font(ctx, 30);
+        center(ctx, 'SEM ENERGIA', w / 2, 120, '#5a2030');
+        font(ctx, 20, 'normal');
+        center(ctx, 'ajuste as válvulas do reator', w / 2, 175, '#7f95b3');
+        return;
+      }
+      frame(ctx, w, h, mode === 'done' ? '#4dff9a' : '#ff5c7a', 6);
+      font(ctx, 28);
+      center(ctx, 'ORÁCULO', w / 2, 50, mode === 'done' ? '#4dff9a' : '#ff5c7a');
+      font(ctx, fitSize(text, 460, 34));
+      center(ctx, text, w / 2, 135, '#ffb347');
+      font(ctx, 22, 'normal');
+      if (mode === 'done') {
+        center(ctx, 'EQUIVALÊNCIA CONFIRMADA', w / 2, 215, '#4dff9a');
+        center(ctx, 'PORTA LIBERADA', w / 2, 250, '#4dff9a');
+      } else {
+        center(ctx, 'escolha a fórmula equivalente', w / 2, 215, '#d6e4f5');
+        center(ctx, '[E] ou clique para abrir', w / 2, 250, '#7f95b3');
+      }
+    });
+  }
+  draw('locked');
+  return { texture: made.texture, set: draw };
+}

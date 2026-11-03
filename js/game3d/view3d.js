@@ -43,7 +43,10 @@ function status() {
     table: state.isSolved('r1table'),
     safe: state.isSolved('r2safe'),
     files: state.isSolved('r3files'),
-    lock: state.isSolved('r3lock')
+    lock: state.isSolved('r3lock'),
+    valves: state.isSolved('r4valves'),
+    equiv: state.isSolved('r4equiv'),
+    unlocks: [state.isSolved('r1table'), state.isSolved('r2safe'), state.isSolved('r3lock'), state.isSolved('r4equiv')]
   };
 }
 
@@ -209,7 +212,8 @@ function checkExit() {
   if (winFired) {
     return;
   }
-  if (world.doorOpenAmount(2) > 0.8 && player.z < doors[2].zNear - WALL / 2) {
+  const last = doors.length - 1;
+  if (world.doorOpenAmount(last) > 0.8 && player.z < doors[last].zNear - WALL / 2) {
     winFired = true;
     G.main.win();
   }

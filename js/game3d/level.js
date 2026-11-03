@@ -10,22 +10,25 @@ export const EYE = 1.65;
 export const REACH = 3.2;
 export const SPEED = 3.2;
 export const SPRINT = 5;
-export const ROOM_COUNT = 3;
+export const ROOM_COUNT = 4;
 
 export function roomBounds(index) {
   const zMax = (1 - index) * (DEPTH + WALL);
   return { index: index, xMin: -HALF, xMax: HALF, zMax: zMax, zMin: zMax - DEPTH };
 }
 
-export const rooms = [1, 2, 3].map(roomBounds);
+export const rooms = Array.from({ length: ROOM_COUNT }, function (unused, i) {
+  return roomBounds(i + 1);
+});
 
 export const spawn = { x: 0, z: -1.2, yaw: 0, pitch: 0 };
 
-export const unlockKeys = ['r1table', 'r2safe', 'r3lock'];
+export const unlockKeys = ['r1table', 'r2safe', 'r3lock', 'r4equiv'];
 
 export const lockedMessages = [
   'A porta está trancada. Restabeleça a energia e valide o terminal.',
   'A porta está trancada. A chave está dentro do cofre.',
+  'A porta está trancada. O cadeado final ainda está fechado.',
   'A porta de escape está trancada.'
 ];
 
@@ -70,6 +73,15 @@ export const room3 = {
   desk: { x: 2.4, z: -24.3, w: 1.8, d: 0.8, h: 0.8 },
   chair: { x: 2.4, z: -23.2, w: 0.5, d: 0.5 },
   lock: { y: 1.4, z: -22.2 }
+};
+
+export const room4 = {
+  laws: { x: -HALF + 0.02, y: 1.85, z: -27.6, w: 2.4, h: 1.4 },
+  premises: { x: HALF - 0.02, y: 1.85, z: -27.6, w: 2.4, h: 1.4 },
+  valves: { x: 3.7, z: -31.0, w: 0.6, d: 1.8, h: 1.6 },
+  core: { x: 1.9, z: -29.4, w: 1.1, d: 1.1 },
+  desk: { x: -2.9, z: -32.7, w: 1.8, d: 0.8, h: 0.8 },
+  chair: { x: -2.9, z: -31.6, w: 0.5, d: 0.5 }
 };
 
 function box(xMin, xMax, zMin, zMax, id) {
@@ -119,15 +131,19 @@ export function buildColliders() {
   list.push(centered(room3.desk.x, room3.desk.z, room3.desk.w, room3.desk.d, 'desk3'));
   list.push(centered(room3.chair.x, room3.chair.z, room3.chair.w, room3.chair.d, 'chair3'));
 
+  list.push(centered(room4.valves.x, room4.valves.z, room4.valves.w, room4.valves.d, 'valves'));
+  list.push(centered(room4.core.x, room4.core.z, room4.core.w, room4.core.d, 'core'));
+  list.push(centered(room4.desk.x, room4.desk.z, room4.desk.w, room4.desk.d, 'desk4'));
+  list.push(centered(room4.chair.x, room4.chair.z, room4.chair.w, room4.chair.d, 'chair4'));
+
   return list;
 }
 
 export function roomIndexAt(z) {
-  if (z > rooms[0].zMin - WALL / 2) {
-    return 1;
+  for (let i = 0; i < ROOM_COUNT - 1; i++) {
+    if (z > rooms[i].zMin - WALL / 2) {
+      return i + 1;
+    }
   }
-  if (z > rooms[1].zMin - WALL / 2) {
-    return 2;
-  }
-  return 3;
+  return ROOM_COUNT;
 }

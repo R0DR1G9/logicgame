@@ -8,14 +8,15 @@ import { surface } from './materials.js';
 import { createKit } from './kit.js';
 import { buildRoom2 } from './room2.js';
 import { buildRoom3 } from './room3.js';
+import { buildRoom4 } from './room4.js';
 import { addGlow, addBlob, addEdgeShade, createDust } from './effects.js';
 
-const ACCENTS = [0x3de0ff, 0xffb347, 0x4dff9a];
-const ACCENT_CSS = ['#3de0ff', '#ffb347', '#4dff9a'];
-const WALL_BODY = [0x1c2b47, 0x2c2340, 0x173631];
-const WALL_TINTS = [0x8fa8d6, 0x7a6cae, 0x6fae98];
-const FLOOR_TINTS = [0xc9d3e6, 0xd9cbf0, 0xc6eadb];
-const DOOR_LABELS = ['NÍVEL 2', 'NÍVEL 3', 'SAÍDA'];
+const ACCENTS = [0x3de0ff, 0xffb347, 0x4dff9a, 0xff5c7a];
+const ACCENT_CSS = ['#3de0ff', '#ffb347', '#4dff9a', '#ff5c7a'];
+const WALL_BODY = [0x1c2b47, 0x2c2340, 0x173631, 0x3a1a26];
+const WALL_TINTS = [0x8fa8d6, 0x7a6cae, 0x6fae98, 0xb0766c];
+const FLOOR_TINTS = [0xc9d3e6, 0xd9cbf0, 0xc6eadb, 0xe3cdc4];
+const DOOR_LABELS = ['NÍVEL 2', 'NÍVEL 3', 'NÍVEL 4', 'SAÍDA'];
 const SOLID_LIGHT = 52;
 const LED_COLORS = [0x4dff9a, 0xffb347, 0xff5c7a, 0x3de0ff];
 
@@ -85,7 +86,7 @@ export function buildWorld() {
     kit.box(sideW, HEIGHT, WALL, bodyMat, sideX, HEIGHT / 2, farZ);
     kit.box(DOOR_W, HEIGHT - DOOR_H, WALL, bodyMat, 0, DOOR_H + (HEIGHT - DOOR_H) / 2, farZ);
     wallFace(room.zMin + 0.001, 0, tint);
-    if (i < 2) {
+    if (i < rooms.length - 1) {
       wallFace(room.zMin - WALL - 0.001, Math.PI, WALL_TINTS[i + 1]);
     }
 
@@ -140,7 +141,7 @@ export function buildWorld() {
 
   kit.box(WIDTH + WALL * 2, HEIGHT, WALL, kit.material(WALL_BODY[0]), 0, HEIGHT / 2, rooms[0].zMax + WALL / 2).name = 'near-wall';
   clad('wall', WIDTH, HEIGHT, 0, HEIGHT / 2, rooms[0].zMax - 0.001, Math.PI, WALL_TINTS[0]);
-  kit.box(WIDTH + WALL * 2, 0.2, rooms[0].zMax - rooms[2].zMin + WALL * 2, kit.material(0x0b1220), 0, HEIGHT + 0.1, (rooms[0].zMax + rooms[2].zMin) / 2);
+  kit.box(WIDTH + WALL * 2, 0.2, rooms[0].zMax - rooms[rooms.length - 1].zMin + WALL * 2, kit.material(0x0b1220), 0, HEIGHT + 0.1, (rooms[0].zMax + rooms[rooms.length - 1].zMin) / 2);
 
   const cz1 = (rooms[0].zMin + rooms[0].zMax) / 2;
   [-1.9, 1.9].forEach(function (offset) {
@@ -253,13 +254,14 @@ export function buildWorld() {
   const room2Part = buildRoom2({ scene: scene, kit: kit, tag: tag, frameMat: frameMat, pipeMat: pipeMat, pickables: pickables });
 
   const room3Part = buildRoom3({ scene: scene, kit: kit, tag: tag, pickables: pickables, leds: leds });
+  const room4Part = buildRoom4({ scene: scene, kit: kit, tag: tag, pickables: pickables });
 
   const doorStates = doors.map(function (door, i) {
     const group = new THREE.Group();
     const zc = door.zFar + WALL / 2;
     group.position.set(0, DOOR_H / 2, zc);
     scene.add(group);
-    const info = { door: i, label: i === 2 ? 'Porta de escape' : 'Porta' };
+    const info = { door: i, label: i === doors.length - 1 ? 'Porta de escape' : 'Porta' };
 
     const leafMat = kit.material(0x2a3a5a, { metalness: 0.55, roughness: 0.5 });
     const insetMat = kit.material(0x1c2840, { metalness: 0.5, roughness: 0.55 });
@@ -298,7 +300,7 @@ export function buildWorld() {
     const keyLed = kit.material(0x050505, { emissive: 0xff5c7a, emissiveIntensity: 1.8 });
     kit.box(0.16, 0.03, 0.01, keyLed, keyX, 1.49, door.zNear + 0.046, undefined, { pick: false, cast: false });
 
-    const exitLight = i === 2 ? new THREE.Mesh(
+    const exitLight = i === doors.length - 1 ? new THREE.Mesh(
       new THREE.PlaneGeometry(6, 4),
       new THREE.MeshBasicMaterial({ color: 0xd9fff0, fog: false })
     ) : null;
@@ -379,7 +381,8 @@ export function buildWorld() {
 
     room2Part.apply(status, instant);
     room3Part.apply(status, instant);
-    const unlocked = [status.table, status.safe, status.lock];
+    room4Part.apply(status, instant);
+    const unlocked = status.unlocks;
     const opened = [];
     doorStates.forEach(function (state, i) {
       if (unlocked[i] && !state.unlocked) {
@@ -432,6 +435,7 @@ export function buildWorld() {
     dust.update(clock, dt);
     room2Part.update(dt, clock);
     room3Part.update(dt, clock);
+    room4Part.update(dt, clock);
   }
 
   function setQuality(quality) {
@@ -444,6 +448,7 @@ export function buildWorld() {
     panelTex.set(panelOn);
     screenTex.set(terminalMode);
     room3Part.refresh();
+    room4Part.refresh();
   }
 
   function doorOpenAmount(index) {
