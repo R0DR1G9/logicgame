@@ -34,7 +34,7 @@
   background: radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(3, 6, 12, 0.8) 100%);
 }
 
-.sym {
+.backdrop .sym {
   position: absolute;
   color: rgba(61, 224, 255, 0.16);
   font-family: var(--display);
@@ -43,18 +43,18 @@
   animation: drift 16s linear infinite;
 }
 
-.sym:nth-child(1) { left: 6%; top: 78%; font-size: 2.6rem; animation-delay: -1s; }
-.sym:nth-child(2) { left: 16%; top: 60%; font-size: 1.6rem; animation-delay: -6s; animation-duration: 19s; }
-.sym:nth-child(3) { left: 27%; top: 84%; font-size: 3.2rem; animation-delay: -11s; }
-.sym:nth-child(4) { left: 38%; top: 70%; font-size: 1.8rem; animation-delay: -3s; animation-duration: 21s; }
-.sym:nth-child(5) { left: 49%; top: 88%; font-size: 2.2rem; animation-delay: -9s; }
-.sym:nth-child(6) { left: 58%; top: 66%; font-size: 3rem; animation-delay: -14s; animation-duration: 18s; }
-.sym:nth-child(7) { left: 68%; top: 80%; font-size: 1.7rem; animation-delay: -5s; }
-.sym:nth-child(8) { left: 77%; top: 62%; font-size: 2.4rem; animation-delay: -12s; animation-duration: 22s; }
-.sym:nth-child(9) { left: 86%; top: 86%; font-size: 2rem; animation-delay: -2s; }
-.sym:nth-child(10) { left: 92%; top: 68%; font-size: 2.8rem; animation-delay: -8s; animation-duration: 17s; }
-.sym:nth-child(11) { left: 3%; top: 40%; font-size: 1.5rem; color: rgba(255, 179, 71, 0.16); animation-delay: -7s; animation-duration: 24s; }
-.sym:nth-child(12) { left: 95%; top: 38%; font-size: 1.5rem; color: rgba(255, 179, 71, 0.16); animation-delay: -13s; animation-duration: 23s; }
+.backdrop .sym:nth-child(1) { left: 6%; top: 78%; font-size: 2.6rem; animation-delay: -1s; }
+.backdrop .sym:nth-child(2) { left: 16%; top: 60%; font-size: 1.6rem; animation-delay: -6s; animation-duration: 19s; }
+.backdrop .sym:nth-child(3) { left: 27%; top: 84%; font-size: 3.2rem; animation-delay: -11s; }
+.backdrop .sym:nth-child(4) { left: 38%; top: 70%; font-size: 1.8rem; animation-delay: -3s; animation-duration: 21s; }
+.backdrop .sym:nth-child(5) { left: 49%; top: 88%; font-size: 2.2rem; animation-delay: -9s; }
+.backdrop .sym:nth-child(6) { left: 58%; top: 66%; font-size: 3rem; animation-delay: -14s; animation-duration: 18s; }
+.backdrop .sym:nth-child(7) { left: 68%; top: 80%; font-size: 1.7rem; animation-delay: -5s; }
+.backdrop .sym:nth-child(8) { left: 77%; top: 62%; font-size: 2.4rem; animation-delay: -12s; animation-duration: 22s; }
+.backdrop .sym:nth-child(9) { left: 86%; top: 86%; font-size: 2rem; animation-delay: -2s; }
+.backdrop .sym:nth-child(10) { left: 92%; top: 68%; font-size: 2.8rem; animation-delay: -8s; animation-duration: 17s; }
+.backdrop .sym:nth-child(11) { left: 3%; top: 40%; font-size: 1.5rem; color: rgba(255, 179, 71, 0.16); animation-delay: -7s; animation-duration: 24s; }
+.backdrop .sym:nth-child(12) { left: 95%; top: 38%; font-size: 1.5rem; color: rgba(255, 179, 71, 0.16); animation-delay: -13s; animation-duration: 23s; }
 
 .title {
   position: relative;
