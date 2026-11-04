@@ -316,6 +316,10 @@ button {
   gap: 14px;
 }
 
+.stack > * {
+  flex-shrink: 0;
+}
+
 .modal-text {
   margin: 0;
   line-height: 1.6;
