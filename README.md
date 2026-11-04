@@ -29,7 +29,6 @@ Depois acesse `http://localhost:8765/index.html`. Não precisa instalar nada, o 
 | 4 | Difícil | Equivalências lógicas | Deduzir o estado das válvulas a partir de premissas e escolher a fórmula equivalente (De Morgan, contrapositiva, implicação material) |
 | 5 | Muito difícil | Cavaleiros e mentirosos, tableaux semânticos e validade de argumentos | Três selos independentes: identificar quem diz a verdade, montar tableaux para decidir se conjuntos de fórmulas são satisfatíveis e separar argumentos válidos dos inválidos |
 
-Todo o conteúdo do jogo é lógica proposicional, dentro das aulas 2 a 10 da disciplina.
 
 ## Desafios gerados por semente
 
