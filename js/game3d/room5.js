@@ -23,12 +23,12 @@ export function buildRoom5(ctx) {
   tag(kit.sign(islandsTex.texture, ib.w, ib.h, -HALF + 0.042, ib.y, ib.z, Math.PI / 2), islandsInfo);
   addGlow(scene, VIOLET, -HALF + 0.6, ib.y, ib.z, 3.4, 0.1);
 
-  const relationsInfo = { room: 5, action: 'relations', label: 'Matriz de Relações' };
-  const rb = room5.relations;
-  const relationsTex = tex.relationsTexture();
-  tag(kit.box(0.04, rb.h + 0.16, rb.w + 0.16, frameMat, HALF - 0.02, rb.y, rb.z), relationsInfo);
-  tag(kit.box(0.1, 0.04, rb.w, frameMat, HALF - 0.05, rb.y - rb.h / 2 - 0.1, rb.z), relationsInfo);
-  tag(kit.sign(relationsTex.texture, rb.w, rb.h, HALF - 0.042, rb.y, rb.z, -Math.PI / 2), relationsInfo);
+  const tableauInfo = { room: 5, action: 'tableau', label: 'Árvore de Refutação' };
+  const rb = room5.tableau;
+  const tableauTex = tex.tableauTexture();
+  tag(kit.box(0.04, rb.h + 0.16, rb.w + 0.16, frameMat, HALF - 0.02, rb.y, rb.z), tableauInfo);
+  tag(kit.box(0.1, 0.04, rb.w, frameMat, HALF - 0.05, rb.y - rb.h / 2 - 0.1, rb.z), tableauInfo);
+  tag(kit.sign(tableauTex.texture, rb.w, rb.h, HALF - 0.042, rb.y, rb.z, -Math.PI / 2), tableauInfo);
   addGlow(scene, VIOLET, HALF - 0.6, rb.y, rb.z, 3.4, 0.1);
 
   const d = room5.desk;
@@ -90,7 +90,7 @@ export function buildRoom5(ctx) {
   let argsDone = false;
 
   function apply(status) {
-    const flags = [status.islands, status.relations, status.args];
+    const flags = [status.islands, status.tableau, status.args];
     doneCount = flags.filter(Boolean).length;
     flags.forEach(function (flag, i) {
       sealMats[i].emissive.setHex(flag ? GREEN : 0xff5c7a);
@@ -118,7 +118,7 @@ export function buildRoom5(ctx) {
 
   function refresh() {
     islandsTex.set();
-    relationsTex.set();
+    tableauTex.set();
     argsTex.set(argsDone);
   }
 

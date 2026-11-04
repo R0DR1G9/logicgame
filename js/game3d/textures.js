@@ -681,47 +681,31 @@ export function islandsTexture() {
   return { texture: made.texture, set: draw };
 }
 
-export function relationsTexture() {
+export function tableauTexture() {
   const made = make(1200, 700, function () {});
   function draw() {
     const p = puzzle();
-    const data = p && p.r5 ? p.r5.relations : null;
+    const data = p && p.r5 ? p.r5.tableau : null;
     made.redraw(function (ctx, w, h) {
       ctx.fillStyle = '#12091d';
       ctx.fillRect(0, 0, w, h);
       frame(ctx, w, h, '#c78bff', 10);
       font(ctx, 46);
-      center(ctx, 'MATRIZ DE RELAÇÕES', w / 2, 56, '#c78bff');
+      center(ctx, 'ÁRVORE DE REFUTAÇÃO', w / 2, 56, '#c78bff');
+      font(ctx, 24, 'normal');
+      center(ctx, 'o conjunto é satisfatível? monte o tableau de cada um', w / 2, 102, '#7f95b3');
       if (!data) {
         return;
       }
-      const cell = 62;
-      const x0 = 80;
-      const y0 = 170;
-      font(ctx, 26);
-      for (let i = 0; i < data.size; i++) {
-        center(ctx, String(i + 1), x0 + (i + 1.5) * cell, y0 + cell / 2, '#ffb347');
-        center(ctx, String(i + 1), x0 + cell / 2, y0 + (i + 1.5) * cell, '#ffb347');
-      }
-      data.matrix.forEach(function (row, i) {
-        row.forEach(function (value, j) {
-          const x = x0 + (j + 1) * cell;
-          const y = y0 + (i + 1) * cell;
-          ctx.fillStyle = value ? 'rgba(199,139,255,0.35)' : '#0a0f18';
-          ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
-          font(ctx, 30);
-          center(ctx, value ? '1' : '0', x + cell / 2, y + cell / 2, value ? '#ffffff' : '#59627a');
-        });
-      });
-      font(ctx, 22, 'normal');
-      center(ctx, 'R(x,y): linha x, coluna y', x0 + (data.size + 1) * cell / 2, y0 + (data.size + 1) * cell + 36, '#7f95b3');
-      data.statements.forEach(function (item, i) {
-        const line = (i + 1) + '. ' + item.text;
-        font(ctx, fitSize(line, 640, 32), 'normal');
+      data.sets.forEach(function (set, i) {
+        const line = (i + 1) + '.  { ' + set.formulas.map(function (item) { return item.text; }).join(' ,  ') + ' }';
+        font(ctx, fitSize(line, 1080, 32), 'normal');
         ctx.fillStyle = '#d6e4f5';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(line, 500, 150 + i * 88);
+        ctx.fillText(line, 60, 180 + i * 100);
+        ctx.fillStyle = 'rgba(199,139,255,0.25)';
+        ctx.fillRect(60, 180 + i * 100 + 40, w - 120, 2);
       });
     });
   }
