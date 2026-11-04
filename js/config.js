@@ -3,7 +3,7 @@
 
   G.config = {
     totalRooms: 5,
-    timeLimitSeconds: 600
+    timeLimitSeconds: 840
   };
 
   G.rooms = G.rooms || {};

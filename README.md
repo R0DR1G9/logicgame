@@ -1,6 +1,6 @@
 # The Logic Escape
 
-Escape room 3D em primeira pessoa, feito para o navegador, em que cada sala só abre para quem resolve um desafio de Lógica Matemática. Cada partida sorteia desafios novos e você tem 10 minutos para sair das 5 salas.
+Escape room 3D em primeira pessoa, feito para o navegador, em que cada sala só abre para quem resolve um desafio de Lógica Matemática. Cada partida sorteia desafios novos e você tem 14 minutos para sair das 5 salas.
 
 ## Como rodar
 
@@ -15,7 +15,7 @@ Depois acesse `http://localhost:8765/index.html`. Não precisa instalar nada, o 
 ## Como jogar
 
 - Objetivo: atravessar as 5 salas e sair antes de o tempo acabar.
-- O relógio de 10 minutos vale para a partida inteira, nunca pausa e, se zerar, você perde e recomeça.
+- O relógio de 14 minutos vale para a partida inteira, nunca pausa e, se zerar, você perde e recomeça.
 - Controles: W A S D ou setas para andar, mouse para olhar, Shift para correr, E ou clique para interagir, C para o caderno de pistas, H para dica, Esc para pausar.
 - Os desafios mudam a cada partida. Nas salas 4 e 5, uma resposta errada trava o painel por alguns segundos, o que impede resolver por tentativa e erro.
 
