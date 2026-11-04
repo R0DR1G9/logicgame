@@ -670,9 +670,9 @@
 
   function tableauStage(rng) {
     const names = ['A', 'B', 'C', 'D'];
-    const satCount = rng.int(2, 3);
+    const satCount = rng.int(1, 2);
     const sets = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 3; i++) {
       const set = tableauSet(rng, names, i < satCount);
       if (!set) {
         return null;
@@ -754,7 +754,7 @@
   function argumentsStage(rng) {
     const names = ['A', 'B', 'C', 'D'];
     for (let tries = 0; tries < 3000; tries++) {
-      const forms = rng.shuffle(ARGUMENT_FORMS).slice(0, 5);
+      const forms = rng.shuffle(ARGUMENT_FORMS).slice(0, 3);
       const items = [];
       for (let i = 0; i < forms.length; i++) {
         const map = {};
@@ -784,12 +784,12 @@
           valid: E.entails(premises, conclusion, names)
         });
       }
-      if (items.length < 5) {
+      if (items.length < 3) {
         continue;
       }
       const valid = items.filter(function (item) { return item.valid; }).length;
       const uniqueTexts = new Set(items.map(function (item) { return item.conclusion.text + item.premises.map(function (p) { return p.text; }).join(); }));
-      if (valid < 2 || valid > 3 || uniqueTexts.size < 5) {
+      if (valid < 1 || valid > 2 || uniqueTexts.size < 3) {
         continue;
       }
       return { names: names, items: items };

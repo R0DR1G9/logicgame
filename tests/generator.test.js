@@ -22,12 +22,12 @@ for (let seed = 1; seed <= N; seed++) {
   const cons = is.statements.map((st) => E.iff(E.v(letters[st.speaker]), st.node));
   assert.strictEqual(E.models(cons, letters).length, 1, 'ilha unica');
   const tb = p.r5.tableau;
-  assert.strictEqual(tb.sets.length, 5);
+  assert.strictEqual(tb.sets.length, 3);
   const sc = tb.sets.filter((x) => x.sat).length;
-  assert.ok(sc >= 2 && sc <= 3);
+  assert.ok(sc >= 1 && sc <= 2);
   tb.sets.forEach((x) => assert.strictEqual(E.models(x.formulas.map((f) => f.node), tb.names).length > 0, x.sat));
   const ar = p.r5.args;
-  assert.strictEqual(ar.items.length, 5);
+  assert.strictEqual(ar.items.length, 3);
   ar.items.forEach((it) => assert.strictEqual(it.valid, E.entails(it.premises.map((x) => x.node), it.conclusion.node, ar.names)));
   const v = p.r4.valves;
   assert.ok(v.premises.length >= 6 && v.premises.length <= 8, 'premissas r4');
