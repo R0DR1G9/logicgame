@@ -8,18 +8,6 @@
     return G.rng.create((seed ^ SALT[room]) >>> 0);
   }
 
-  function isPrime(n) {
-    if (n < 2) {
-      return false;
-    }
-    for (let i = 2; i * i <= n; i++) {
-      if (n % i === 0) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   function randomFormula(rng, names, depth) {
     const ops = ['and', 'or', 'imp', 'imp', 'or', 'and', 'iff'];
     function leaf() {
@@ -185,143 +173,125 @@
     return null;
   }
 
-  const PROPERTIES = [
-    { id: 'even', text: function () { return 'x é par'; }, fn: function (x) { return x % 2 === 0; } },
-    { id: 'odd', text: function () { return 'x é ímpar'; }, fn: function (x) { return Math.abs(x % 2) === 1; } },
-    { id: 'mult3', text: function () { return 'x é múltiplo de 3'; }, fn: function (x) { return x % 3 === 0; } },
-    { id: 'mult5', text: function () { return 'x é múltiplo de 5'; }, fn: function (x) { return x % 5 === 0; } },
-    { id: 'prime', text: function () { return 'x é primo'; }, fn: function (x) { return isPrime(x); } }
-  ];
+  const PRECEDENCE = { not: 5, and: 4, or: 3, imp: 2, iff: 1 };
+  const OPERATOR = { and: '∧', or: '∨', imp: '→', iff: '↔' };
 
-  function boundFor(rng) {
-    const kind = rng.pick(['square', 'greater', 'less']);
-    if (kind === 'square') {
-      const k = rng.pick([20, 30, 40, 50, 60, 80, 100]);
-      return { text: 'x² < ' + k, fn: function (x) { return x * x < k; } };
+  function renderPrecedence(node) {
+    if (node.type === 'var') {
+      return node.name;
     }
-    if (kind === 'greater') {
-      const c = rng.int(1, 6);
-      return { text: 'x > ' + c, fn: function (x) { return x > c; } };
+    if (node.type === 'not') {
+      const child = node.args[0];
+      const inner = renderPrecedence(child);
+      return '¬' + (child.type === 'var' || child.type === 'not' ? inner : '(' + inner + ')');
     }
-    const c = rng.int(5, 10);
-    return { text: 'x < ' + c, fn: function (x) { return x < c; } };
+    const parts = node.args.map(function (child) {
+      const text = renderPrecedence(child);
+      const tighter = child.type === 'var' || child.type === 'not' || PRECEDENCE[child.type] > PRECEDENCE[node.type];
+      return tighter ? text : '(' + text + ')';
+    });
+    return parts[0] + ' ' + OPERATOR[node.type] + ' ' + parts[1];
   }
 
-  function room3(seed, start, limit) {
-    const rng = rngFor(seed, 3);
-    const naturalsStart = start === undefined ? 0 : start;
-    const searchLimit = limit === undefined ? 20 : limit;
-    for (let tries = 0; tries < 600; tries++) {
-      const first = rng.pick(PROPERTIES);
-      const bound = boundFor(rng);
-      const satisfies = function (x) {
-        return Number.isInteger(x) && x >= naturalsStart && first.fn(x) && bound.fn(x);
-      };
-      const pure = function (x) {
-        return first.fn(x) && bound.fn(x);
-      };
-      const candidates = [];
-      for (let n = -6; n <= 13; n++) {
-        candidates.push(n);
-      }
-      const yes = candidates.filter(satisfies);
-      const traps = candidates.filter(function (n) { return n < naturalsStart && pure(n); });
-      const no = candidates.filter(function (n) { return !pure(n); });
-      if (yes.length < 3 || traps.length < 1 || no.length < 4) {
+  const TAUTOLOGIES = [
+    'P ∨ ¬P', 'P → P', '(P ∧ Q) → P', 'P → (P ∨ Q)', '((P → Q) ∧ P) → Q', '¬(P ∧ Q) ↔ (¬P ∨ ¬Q)',
+    '(P → Q) ↔ (¬Q → ¬P)', '((P → Q) ∧ (Q → R)) → (P → R)', 'P ↔ ¬¬P', '((P ∨ Q) ∧ ¬P) → Q',
+    '¬(P ∨ Q) ↔ (¬P ∧ ¬Q)', '(P ∧ Q) ↔ (Q ∧ P)', 'P ∧ Q → Q ∨ R', '(P → Q) ∨ (Q → P)', 'P → (Q → P)'
+  ];
+
+  const CONTRADICTIONS = [
+    'P ∧ ¬P', '¬(P → P)', 'P ↔ ¬P', '(P → Q) ∧ P ∧ ¬Q', '¬(P ∨ ¬P)', '(P ∨ Q) ∧ ¬P ∧ ¬Q',
+    '¬((P → Q) ↔ (¬P ∨ Q))', '(P ∧ Q) ∧ ¬(P ∨ Q)', '¬(P → (Q → P))', '(P ↔ Q) ∧ (P ∧ ¬Q)',
+    '¬(P ∨ Q) ∧ (P ∨ R) ∧ ¬R', 'P ∧ (P → Q) ∧ ¬(P ∧ Q)'
+  ];
+
+  const CONTINGENCIES = [
+    'P → Q', 'P ∧ Q', 'P ∨ Q', '(P → Q) → (Q → P)', 'P ↔ Q', '¬P ∨ (Q ∧ R)', '(P ∨ Q) → (P ∧ Q)',
+    '(P → Q) ∧ (Q → R)', '¬(P ∧ Q) → R', 'P ∧ ¬Q', '(P ∧ Q) → (P ↔ R)', '(P ∨ Q) ∧ (¬P ∨ R)',
+    '¬P → (Q ∨ R)', '(P → Q) ↔ (Q → R)'
+  ];
+
+  const IMPLICATIONS = [
+    ['P ∧ Q', 'P'], ['P', 'P ∨ Q'], ['(P → Q) ∧ P', 'Q'], ['(P → Q) ∧ ¬Q', '¬P'], ['(P ∨ Q) ∧ ¬P', 'Q'],
+    ['(P → Q) ∧ (Q → R)', 'P → R'], ['P', 'P'], ['P ∧ Q', 'P ↔ Q'], ['¬(P ∨ Q)', '¬P'], ['P ↔ Q', 'P → Q'],
+    ['Q', 'P ∧ Q'], ['P ∨ Q', 'P'], ['(P → Q) ∧ Q', 'P'], ['(P → Q) ∧ ¬P', '¬Q'], ['P → Q', 'Q → P'],
+    ['P', 'P ∧ Q'], ['¬(P ∧ Q)', '¬P'], ['P ↔ Q', 'P ∧ Q'], ['P ∨ Q', 'P ↔ Q'], ['(P → R) ∧ (Q → R)', 'P → Q']
+  ];
+
+  function renameMap(rng, symbols) {
+    const letters = rng.shuffle(['P', 'Q', 'R', 'S']);
+    const map = {};
+    symbols.forEach(function (symbol, i) {
+      map[symbol] = E.v(letters[i]);
+    });
+    return map;
+  }
+
+  function classify(node) {
+    const values = E.truthTable(node).map(function (row) { return row.value; });
+    if (values.every(Boolean)) {
+      return 0;
+    }
+    if (values.every(function (value) { return !value; })) {
+      return 1;
+    }
+    return 2;
+  }
+
+  function pickClassified(rng, pool, kind, count, taken) {
+    const picked = [];
+    const order = rng.shuffle(pool.slice());
+    for (let i = 0; i < order.length && picked.length < count; i++) {
+      const map = renameMap(rng, ['P', 'Q', 'R']);
+      const node = substitute(parseSimple(order[i]), map);
+      const text = renderPrecedence(node);
+      if (classify(node) !== kind || taken.has(text)) {
         continue;
       }
-      const chosenYes = rng.shuffle(yes).slice(0, Math.min(yes.length, rng.int(3, 4)));
-      const chosenTraps = rng.shuffle(traps).slice(0, Math.min(traps.length, 2));
-      const rest = 12 - chosenYes.length - chosenTraps.length;
-      const chosenNo = rng.shuffle(no).slice(0, rest);
-      if (chosenNo.length < rest) {
-        continue;
+      taken.add(text);
+      picked.push({ text: text, node: node, kind: kind });
+    }
+    return picked;
+  }
+
+  function implicationsStage(rng) {
+    for (let tries = 0; tries < 400; tries++) {
+      const order = rng.shuffle(IMPLICATIONS.slice()).slice(0, 5);
+      const items = order.map(function (pair) {
+        const map = renameMap(rng, ['P', 'Q', 'R']);
+        const left = substitute(parseSimple(pair[0]), map);
+        const right = substitute(parseSimple(pair[1]), map);
+        const names = E.variablesOf(E.and(left, right));
+        return {
+          left: { text: renderPrecedence(left), node: left },
+          right: { text: renderPrecedence(right), node: right },
+          valid: E.entails([left], right, names)
+        };
+      });
+      const valid = items.filter(function (item) { return item.valid; }).length;
+      if (valid >= 2 && valid <= 3) {
+        return items;
       }
-      const grid = chosenYes.concat(chosenTraps).concat(chosenNo).sort(function (a, b) { return a - b; });
-      const condition = '∃x (x ∈ ℕ ∧ ' + first.text() + ' ∧ ' + bound.text + ')';
-      const statements = buildStatements(rng, 3, searchLimit);
-      return {
-        grid: grid,
-        condition: condition,
-        answer: grid.filter(satisfies),
-        satisfies: satisfies,
-        statements: statements
-      };
     }
     return null;
   }
 
-  function buildStatements(rng, count, searchLimit) {
-    const forallTrue = [
-      { text: '∀x ∈ ℕ (x ≥ 0)' },
-      { text: '∀x ∈ ℕ (x² ≥ x)' },
-      { text: '∀x ∈ ℕ (x + 1 > x)' },
-      { text: '∀x ∈ ℕ (x é par ∨ x é ímpar)' }
-    ];
-    const existsFalse = [
-      { text: '∃x ∈ ℕ (x < 0)' },
-      { text: '∃x ∈ ℕ (x² < 0)' },
-      { text: '∃x ∈ ℕ (x é par ∧ x é ímpar)' },
-      { text: '∃x ∈ ℕ (x + 1 < x)' }
-    ];
-    function forallFalse() {
-      const kind = rng.pick(['square', 'even', 'less', 'mult']);
-      if (kind === 'square') {
-        const k = rng.int(30, 300);
-        return { text: '∀x ∈ ℕ (x² < ' + k + ')', truth: false };
-      }
-      if (kind === 'even') {
-        return { text: '∀x ∈ ℕ (x é par)', truth: false };
-      }
-      if (kind === 'less') {
-        const c = rng.int(3, 15);
-        return { text: '∀x ∈ ℕ (x < ' + c + ')', truth: false };
-      }
-      const m = rng.pick([2, 3, 4, 5]);
-      return { text: '∀x ∈ ℕ (x é múltiplo de ' + m + ')', truth: false };
+  function room3(seed) {
+    const rng = rngFor(seed, 3);
+    const taken = new Set();
+    const formulas = pickClassified(rng, TAUTOLOGIES, 0, 2, taken)
+      .concat(pickClassified(rng, CONTRADICTIONS, 1, 2, taken))
+      .concat(pickClassified(rng, CONTINGENCIES, 2, 2, taken));
+    const implications = implicationsStage(rng);
+    if (formulas.length !== 6 || !implications) {
+      return null;
     }
-    function existsTrue() {
-      const kind = rng.pick(['oddsq', 'mult', 'square', 'evengt']);
-      if (kind === 'oddsq') {
-        const k = rng.int(10, 80);
-        return { text: '∃x ∈ ℕ (x é ímpar ∧ x² < ' + k + ')', truth: true };
-      }
-      if (kind === 'mult') {
-        const m = rng.pick([3, 4, 5, 7]);
-        const c = rng.int(2, 9);
-        return { text: '∃x ∈ ℕ (x é múltiplo de ' + m + ' ∧ x > ' + c + ')', truth: true };
-      }
-      if (kind === 'square') {
-        const n = rng.pick([16, 25, 36, 49, 64, 81]);
-        return { text: '∃x ∈ ℕ (x² = ' + n + ')', truth: true };
-      }
-      const c = rng.int(3, 12);
-      return { text: '∃x ∈ ℕ (x é par ∧ x > ' + c + ')', truth: true };
-    }
-    const makers = [
-      function () { const item = rng.pick(forallTrue); return { text: item.text, truth: true }; },
-      function () { const item = rng.pick(existsFalse); return { text: item.text, truth: false }; },
-      forallFalse,
-      existsTrue
-    ];
-    let list = [];
-    for (let tries = 0; tries < 100; tries++) {
-      list = [];
-      const used = new Set();
-      const order = rng.shuffle([0, 1, 2, 3]).slice(0, count);
-      order.forEach(function (index) {
-        const item = makers[index]();
-        if (!used.has(item.text)) {
-          used.add(item.text);
-          list.push(item);
-        }
-      });
-      const trues = list.filter(function (item) { return item.truth; }).length;
-      if (list.length === count && trues >= 1 && trues < count) {
-        break;
-      }
-    }
-    return list;
+    return {
+      kinds: ['Tautologia', 'Contradição', 'Contingência'],
+      formulas: rng.shuffle(formulas),
+      implications: implications,
+      lockUntil: { files: 0, lock: 0 }
+    };
   }
 
   function pickTemplates(rng, names) {
@@ -629,62 +599,87 @@
     return null;
   }
 
-  const RELATION_STATEMENTS = [
-    { text: '∀x ∃y R(x,y)', fn: function (m, n) { return all(n, function (x) { return some(n, function (y) { return m[x][y]; }); }); } },
-    { text: '∃y ∀x R(x,y)', fn: function (m, n) { return some(n, function (y) { return all(n, function (x) { return m[x][y]; }); }); } },
-    { text: '∃x ∀y ¬R(x,y)', fn: function (m, n) { return some(n, function (x) { return all(n, function (y) { return !m[x][y]; }); }); } },
-    { text: '∀x ∀y (R(x,y) → R(y,x))', fn: function (m, n) { return all(n, function (x) { return all(n, function (y) { return !m[x][y] || m[y][x]; }); }); } },
-    { text: '∀x ¬R(x,x)', fn: function (m, n) { return all(n, function (x) { return !m[x][x]; }); } },
-    { text: '∃x ∃y ∃z (R(x,y) ∧ R(y,z) ∧ ¬R(x,z))', fn: function (m, n) { return some(n, function (x) { return some(n, function (y) { return some(n, function (z) { return m[x][y] && m[y][z] && !m[x][z]; }); }); }); } },
-    { text: '∀x ∀y ∀z ((R(x,y) ∧ R(y,z)) → R(x,z))', fn: function (m, n) { return all(n, function (x) { return all(n, function (y) { return all(n, function (z) { return !(m[x][y] && m[y][z]) || m[x][z]; }); }); }); } },
-    { text: '∃x ∀y (R(x,y) ∨ R(y,x))', fn: function (m, n) { return some(n, function (x) { return all(n, function (y) { return m[x][y] || m[y][x]; }); }); } },
-    { text: '∀x ∃y (R(x,y) ∧ R(y,x))', fn: function (m, n) { return all(n, function (x) { return some(n, function (y) { return m[x][y] && m[y][x]; }); }); } },
-    { text: '∃x ∃y (x ≠ y ∧ R(x,y) ∧ R(y,x))', fn: function (m, n) { return some(n, function (x) { return some(n, function (y) { return x !== y && m[x][y] && m[y][x]; }); }); } }
-  ];
-
-  function all(n, fn) {
-    for (let i = 1; i <= n; i++) {
-      if (!fn(i - 1)) {
-        return false;
-      }
+  function tableauFormula(rng, depth, names) {
+    if (depth === 0) {
+      const atom = E.v(rng.pick(names));
+      return rng.chance(0.35) ? E.not(atom) : atom;
     }
-    return true;
+    const left = tableauFormula(rng, depth - 1, names);
+    const right = tableauFormula(rng, depth - 1, names);
+    const node = rng.pick([E.and, E.or, E.imp, E.imp, E.iff])(left, right);
+    return rng.chance(0.2) ? E.not(node) : node;
   }
 
-  function some(n, fn) {
-    for (let i = 1; i <= n; i++) {
-      if (fn(i - 1)) {
-        return true;
-      }
+  function redundantNode(node) {
+    if (node.type === 'var') {
+      return false;
     }
-    return false;
+    if (node.type === 'not') {
+      return redundantNode(node.args[0]);
+    }
+    const left = renderPrecedence(node.args[0]);
+    const right = renderPrecedence(node.args[1]);
+    if (left === right || '¬' + left === right || '¬' + right === left) {
+      return true;
+    }
+    return redundantNode(node.args[0]) || redundantNode(node.args[1]);
   }
 
-  function relationsStage(rng) {
-    const n = 5;
+  function tableauSet(rng, names, wantSat) {
     for (let tries = 0; tries < 4000; tries++) {
-      const density = 0.25 + rng.next() * 0.35;
-      const matrix = [];
-      for (let i = 0; i < n; i++) {
-        const row = [];
-        for (let j = 0; j < n; j++) {
-          row.push(rng.chance(density));
-        }
-        matrix.push(row);
+      const count = rng.int(2, 3);
+      const nodes = [];
+      for (let i = 0; i < count; i++) {
+        nodes.push(tableauFormula(rng, 2, names));
       }
-      const chosen = rng.shuffle(RELATION_STATEMENTS).slice(0, 6);
-      const truths = chosen.map(function (item) { return item.fn(matrix, n); });
-      const trues = truths.filter(Boolean).length;
-      if (trues < 2 || trues > 4) {
+      const texts = nodes.map(function (node) { return renderPrecedence(node); });
+      if (texts.some(function (text) { return text.length > 26; }) || new Set(texts).size < count) {
         continue;
       }
+      if (nodes.some(function (node) { return E.variablesOf(node).length < 2 || redundantNode(node); })) {
+        continue;
+      }
+      const alone = nodes.map(function (node) { return E.models([node], names).length; });
+      if (alone.some(function (n) { return n === 0 || n === Math.pow(2, names.length); })) {
+        continue;
+      }
+      const models = E.models(nodes, names).length;
+      if (wantSat) {
+        if (models < 1 || models > 3) {
+          continue;
+        }
+      } else {
+        if (models !== 0) {
+          continue;
+        }
+        const minimal = nodes.every(function (omit, skip) {
+          const rest = nodes.filter(function (node, i) { return i !== skip; });
+          return E.models(rest, names).length > 0;
+        });
+        if (!minimal) {
+          continue;
+        }
+      }
       return {
-        size: n,
-        matrix: matrix,
-        statements: chosen.map(function (item, i) { return { text: item.text, truth: truths[i] }; })
+        formulas: nodes.map(function (node, i) { return { node: node, text: texts[i] }; }),
+        sat: wantSat
       };
     }
     return null;
+  }
+
+  function tableauStage(rng) {
+    const names = ['A', 'B', 'C', 'D'];
+    const satCount = rng.int(1, 2);
+    const sets = [];
+    for (let i = 0; i < 3; i++) {
+      const set = tableauSet(rng, names, i < satCount);
+      if (!set) {
+        return null;
+      }
+      sets.push(set);
+    }
+    return { names: names, sets: rng.shuffle(sets) };
   }
 
   const ARGUMENT_FORMS = [
@@ -759,7 +754,7 @@
   function argumentsStage(rng) {
     const names = ['A', 'B', 'C', 'D'];
     for (let tries = 0; tries < 3000; tries++) {
-      const forms = rng.shuffle(ARGUMENT_FORMS).slice(0, 5);
+      const forms = rng.shuffle(ARGUMENT_FORMS).slice(0, 3);
       const items = [];
       for (let i = 0; i < forms.length; i++) {
         const map = {};
@@ -789,12 +784,12 @@
           valid: E.entails(premises, conclusion, names)
         });
       }
-      if (items.length < 5) {
+      if (items.length < 3) {
         continue;
       }
       const valid = items.filter(function (item) { return item.valid; }).length;
       const uniqueTexts = new Set(items.map(function (item) { return item.conclusion.text + item.premises.map(function (p) { return p.text; }).join(); }));
-      if (valid < 2 || valid > 3 || uniqueTexts.size < 5) {
+      if (valid < 1 || valid > 2 || uniqueTexts.size < 3) {
         continue;
       }
       return { names: names, items: items };
@@ -805,21 +800,20 @@
   function room5(seed) {
     const rng = rngFor(seed, 5);
     const islands = islandsStage(rng);
-    const relations = relationsStage(rng);
+    const tableau = tableauStage(rng);
     const args = argumentsStage(rng);
-    if (!islands || !relations || !args) {
+    if (!islands || !tableau || !args) {
       return null;
     }
-    return { islands: islands, relations: relations, args: args, lockUntil: { islands: 0, relations: 0, args: 0 } };
+    return { islands: islands, tableau: tableau, args: args, lockUntil: { islands: 0, tableau: 0, args: 0 } };
   }
 
   function generate(seed) {
-    const cfg = G.config || {};
     return {
       seed: seed,
       r1: room1(seed),
       r2: room2(seed),
-      r3: room3(seed, cfg.naturalsStart, cfg.searchLimit),
+      r3: room3(seed),
       r4: room4(seed),
       r5: room5(seed)
     };

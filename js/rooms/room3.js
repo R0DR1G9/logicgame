@@ -1,147 +1,172 @@
 (function (root) {
   const G = (root.LogicGame = root.LogicGame || {});
-  const E = G.evaluator;
   const ui = G.ui;
   const state = G.state;
+  const LOCK_SECONDS = 15;
 
   function puzzle() {
     return G.puzzle.r3;
   }
 
-  function satisfies(x) {
-    return puzzle().satisfies(x);
+  function lockLeft(stage) {
+    return Math.max(0, Math.ceil((puzzle().lockUntil[stage] - Date.now()) / 1000));
   }
 
+  function guardButton(stage, button, label) {
+    function paint() {
+      const left = lockLeft(stage);
+      if (!root.document.body.contains(button)) {
+        return true;
+      }
+      button.disabled = left > 0;
+      button.textContent = left > 0 ? 'Aguarde ' + left + 's' : label;
+      return left === 0;
+    }
+    if (paint()) {
+      return;
+    }
+    const timer = root.setInterval(function () {
+      if (paint()) {
+        root.clearInterval(timer);
+      }
+    }, 250);
+  }
+
+  function penalize(stage, button, label) {
+    puzzle().lockUntil[stage] = Date.now() + LOCK_SECONDS * 1000;
+    guardButton(stage, button, label);
+  }
+
+  const MANUAL = [
+    ['Tautologia', 'Fórmula que dá verdadeiro em todas as linhas da tabela-verdade.'],
+    ['Contradição', 'Fórmula que dá falso em todas as linhas da tabela-verdade.'],
+    ['Contingência', 'Fórmula que dá verdadeiro em algumas linhas e falso em outras.'],
+    ['Precedência', 'Sem parênteses, resolva nesta ordem: ¬, ∧, ∨, →, ↔. Por exemplo, P ∨ Q ∧ R significa P ∨ (Q ∧ R).'],
+    ['Implicação lógica', 'A ⇒ B vale quando A → B é tautologia, ou seja, nenhuma linha deixa A verdadeira e B falsa.'],
+    ['Propriedades', 'A implicação é reflexiva (A ⇒ A) e transitiva (se A ⇒ B e B ⇒ C, então A ⇒ C).']
+  ];
+
   function openScreen() {
-    const reading = 'Leitura: existe x tal que x pertence aos naturais, x é par e x ao quadrado é menor que 50. Cada arquivo só pode ser deletado se satisfizer as três condições ao mesmo tempo.';
     const body = ui.el('div', 'stack');
     ui.append(
       body,
-      ui.el('p', 'modal-text', 'Apenas os arquivos que satisfazem a condição abaixo podem ser deletados.'),
-      ui.el('p', 'formula', puzzle().condition),
-      ui.el('p', 'modal-text', reading)
+      ui.el('p', 'modal-text', 'Fila de quarentena do servidor. Cada arquivo carrega uma fórmula que precisa ser classificada no terminal.')
     );
+    const list = ui.el('ol', 'premises');
+    puzzle().formulas.forEach(function (item) {
+      const row = ui.el('li');
+      row.appendChild(ui.el('span', 'sym', item.text));
+      list.appendChild(row);
+    });
+    body.appendChild(list);
     G.main.collect(
       'r3-screen',
       3,
-      'Condição de exclusão',
-      puzzle().condition + '\n' + reading
+      'Fila de quarentena',
+      puzzle().formulas.map(function (item, index) {
+        return (index + 1) + '. ' + item.text;
+      }).join('\n')
     );
     ui.openModal('Tela do servidor', body);
   }
 
   function openManual() {
-    const start = G.config.naturalsStart;
-    const convention = 'Neste sistema, ℕ começa em ' + start + '.';
-    const text =
-      '∃x P(x): basta que um elemento do domínio satisfaça P.\n' +
-      '∀x P(x): todos os elementos do domínio precisam satisfazer P. Um único contraexemplo já torna a afirmação falsa.\n' +
-      '¬∀x P(x) equivale a ∃x ¬P(x).\n' +
-      convention;
     const body = ui.el('div', 'stack');
-    ui.append(
-      body,
-      ui.el('p', 'modal-text', 'Manual de quantificadores do servidor.'),
-      ui.el('p', 'modal-text', text)
-    );
-    G.main.collect('r3-manual', 3, 'Manual de quantificadores', text);
-    ui.openModal('Manual', body);
+    const lines = [];
+    MANUAL.forEach(function (item) {
+      const card = ui.el('div', 'rule');
+      card.appendChild(ui.el('h3', '', item[0]));
+      card.appendChild(ui.el('div', 'rule-line', item[1]));
+      body.appendChild(card);
+      lines.push(item[0] + ': ' + item[1]);
+    });
+    G.main.collect('r3-manual', 3, 'Manual de classificação', lines.join('\n'));
+    ui.openModal('Manual de classificação', body);
   }
 
   function openFiles() {
     const body = ui.el('div', 'stack');
-    ui.append(
-      body,
-      ui.el('p', 'modal-text', 'Selecione apenas os arquivos que satisfazem a condição de exclusão e execute.'),
-      ui.el('p', 'formula', puzzle().condition)
-    );
-
     if (state.isSolved('r3files')) {
-      body.appendChild(ui.el('p', 'feedback ok', 'Arquivos corretos deletados. O cadeado final foi exposto.'));
+      body.appendChild(ui.el('p', 'feedback ok', 'Todos os arquivos foram classificados. O cadeado final foi exposto.'));
       ui.openModal('Terminal de arquivos', body);
       return;
     }
-
-    const selected = new Set();
-    const grid = ui.el('div', 'file-grid');
-    puzzle().grid.forEach(function (number) {
-      const cell = ui.el('button', 'file-cell');
-      cell.type = 'button';
-      cell.appendChild(document.createTextNode(String(number)));
-      cell.appendChild(ui.el('small', '', '.dat'));
-      cell.addEventListener('click', function () {
-        if (selected.has(number)) {
-          selected.delete(number);
-        } else {
-          selected.add(number);
-        }
-        cell.classList.toggle('is-selected', selected.has(number));
+    ui.append(
+      body,
+      ui.el('p', 'modal-text', 'Clique em cada fórmula para escolher se ela é tautologia, contradição ou contingência. Um erro trava o terminal por ' + LOCK_SECONDS + ' segundos.')
+    );
+    const kinds = puzzle().kinds;
+    const choices = puzzle().formulas.map(function () { return -1; });
+    puzzle().formulas.forEach(function (item, index) {
+      const row = ui.el('div', 'statement');
+      const button = ui.button('?', 'btn option', function () {
+        choices[index] = (choices[index] + 1) % kinds.length;
+        button.textContent = kinds[choices[index]];
+        button.classList.add('is-selected');
       });
-      grid.appendChild(cell);
+      ui.append(row, ui.el('span', 'statement-text', item.text), button);
+      body.appendChild(row);
     });
-
     const result = ui.feedback();
-    const run = ui.button('Executar exclusão', 'btn primary', function () {
-      const correct = puzzle().grid.filter(satisfies);
-      const missing = correct.filter(function (number) {
-        return !selected.has(number);
-      });
-      const extra = Array.from(selected).filter(function (number) {
-        return correct.indexOf(number) === -1;
-      });
+    const run = ui.button('Executar classificação', 'btn primary', function () {
+      if (lockLeft('files') > 0) {
+        return;
+      }
+      if (choices.some(function (choice) { return choice < 0; })) {
+        ui.setFeedback(result, 'Classifique todas as fórmulas.', 'bad');
+        return;
+      }
       state.addAttempt();
-      if (missing.length === 0 && extra.length === 0) {
+      const wrong = puzzle().formulas.filter(function (item, index) {
+        return item.kind !== choices[index];
+      }).length;
+      if (wrong === 0) {
         state.markSolved('r3files');
         ui.closeModal();
-        ui.toast('Exclusão concluída.', 'ok');
+        ui.toast('Classificação concluída.', 'ok');
         G.main.render();
         return;
       }
-      if (missing.length > 0 && extra.length > 0) {
-        ui.setFeedback(result, 'Há arquivos selecionados que não satisfazem a condição e outros que ainda faltam.', 'bad');
-      } else if (extra.length > 0) {
-        ui.setFeedback(result, 'Algum arquivo selecionado não satisfaz as três condições ao mesmo tempo.', 'bad');
-      } else {
-        ui.setFeedback(result, 'Ainda existem arquivos que satisfazem a condição e não foram selecionados.', 'bad');
-      }
+      ui.setFeedback(result, 'Classificação incorreta. O terminal travou por ' + LOCK_SECONDS + ' segundos.', 'bad');
+      penalize('files', run, 'Executar classificação');
     });
-    ui.append(body, grid, result, run);
+    ui.append(body, result, run);
     ui.openModal('Terminal de arquivos', body);
+    guardButton('files', run, 'Executar classificação');
   }
 
   function openLock() {
     if (!state.isSolved('r3files')) {
-      ui.toast('O cadeado está coberto por um painel. Delete os arquivos primeiro.', 'bad');
+      ui.toast('O cadeado está coberto por um painel. Classifique os arquivos primeiro.', 'bad');
       return;
     }
-
     const body = ui.el('div', 'stack');
-    body.appendChild(ui.el('p', 'modal-text', 'Cadeado final. Marque cada afirmação como V ou F, considerando o domínio dos naturais.'));
-
     if (state.isSolved('r3lock')) {
-      body.appendChild(ui.el('p', 'feedback ok', 'Cadeado aberto. A porta de escape está liberada.'));
+      body.appendChild(ui.el('p', 'feedback ok', 'Cadeado aberto. A porta está liberada.'));
       ui.openModal('Cadeado final', body);
       return;
     }
-
-    const toggles = puzzle().statements.map(function () {
+    body.appendChild(ui.el('p', 'modal-text', 'Marque V quando a implicação lógica A ⇒ B vale e F quando não vale. Um erro trava o cadeado por ' + LOCK_SECONDS + ' segundos.'));
+    const toggles = puzzle().implications.map(function () {
       return ui.createToggle('', null);
     });
-    puzzle().statements.forEach(function (statement, index) {
+    puzzle().implications.forEach(function (item, index) {
       const row = ui.el('div', 'statement');
-      ui.append(row, ui.el('span', 'statement-text', statement.text), toggles[index].node);
+      ui.append(row, ui.el('span', 'statement-text', item.left.text + '  ⇒  ' + item.right.text), toggles[index].node);
       body.appendChild(row);
     });
-
     const result = ui.feedback();
     const unlock = ui.button('Destravar', 'btn primary', function () {
+      if (lockLeft('lock') > 0) {
+        return;
+      }
       if (toggles.some(function (toggle) { return toggle.get() === null; })) {
-        ui.setFeedback(result, 'Responda todas as afirmações.', 'bad');
+        ui.setFeedback(result, 'Responda todas as implicações.', 'bad');
         return;
       }
       state.addAttempt();
-      const wrong = puzzle().statements.filter(function (statement, index) {
-        return toggles[index].get() !== statement.truth;
+      const wrong = puzzle().implications.filter(function (item, index) {
+        return toggles[index].get() !== item.valid;
       }).length;
       if (wrong === 0) {
         state.markSolved('r3lock');
@@ -150,57 +175,12 @@
         G.main.render();
         return;
       }
-      ui.setFeedback(result, wrong + ' afirmação(ões) incorreta(s). Procure um contraexemplo ou um elemento que sirva de testemunha.', 'bad');
+      ui.setFeedback(result, 'Resposta incorreta. O cadeado travou por ' + LOCK_SECONDS + ' segundos.', 'bad');
+      penalize('lock', unlock, 'Destravar');
     });
     ui.append(body, result, unlock);
     ui.openModal('Cadeado final', body);
-  }
-
-  function openDoor() {
-    if (!state.isSolved('r3lock')) {
-      ui.toast('A porta de escape está trancada.', 'bad');
-      return;
-    }
-    G.main.win();
-  }
-
-  function build(scene) {
-    ui.append(
-      scene,
-      ui.hotspot({
-        cls: 'hs-screen',
-        label: 'Tela do servidor',
-        glyph: '▣',
-        onClick: openScreen
-      }),
-      ui.hotspot({
-        cls: 'hs-manual',
-        label: 'Manual',
-        glyph: '∀',
-        onClick: openManual
-      }),
-      ui.hotspot({
-        cls: 'hs-files',
-        label: 'Terminal de arquivos',
-        glyph: '⌗',
-        status: state.isSolved('r3files') ? 'done' : null,
-        onClick: openFiles
-      }),
-      ui.hotspot({
-        cls: 'hs-lock',
-        label: 'Cadeado final',
-        glyph: '⚿',
-        status: state.isSolved('r3lock') ? 'done' : (state.isSolved('r3files') ? null : 'locked'),
-        onClick: openLock
-      }),
-      ui.hotspot({
-        cls: 'hs-door',
-        label: 'Porta de escape',
-        glyph: '⇥',
-        status: state.isSolved('r3lock') ? 'done' : 'locked',
-        onClick: openDoor
-      })
-    );
+    guardButton('lock', unlock, 'Destravar');
   }
 
   function hints() {
@@ -208,9 +188,9 @@
       return {
         stage: 'r3-files',
         list: [
-          'Teste cada número da grade contra as três partes da condição: pertencer a ℕ, ser par e ter quadrado menor que 50.',
-          'Números negativos não pertencem a ℕ. Confira a convenção no manual.',
-          'Elimine primeiro os números que falham em alguma das três partes e fique só com os que passam em todas ao mesmo tempo.'
+          'Monte a tabela-verdade: se todas as linhas dão V é tautologia, se todas dão F é contradição, senão é contingência.',
+          'Respeite a precedência: ¬ primeiro, depois ∧, ∨, → e por último ↔.',
+          'Procure uma única linha que dê V e outra que dê F. Se achar as duas, é contingência e você pode parar.'
         ]
       };
     }
@@ -218,20 +198,17 @@
       return {
         stage: 'r3-lock',
         list: [
-          'Para "para todo" ser verdadeiro, todos os elementos precisam satisfazer. Basta um contraexemplo para derrubar.',
-          'Para "existe" ser verdadeiro, basta encontrar um elemento que sirva de testemunha.'
+          'A ⇒ B só vale se não existir linha com A verdadeira e B falsa.',
+          'Para derrubar uma implicação, procure uma atribuição que torne A verdadeira e B falsa.',
+          'Modus ponens, modus tollens e silogismo disjuntivo aparecem aqui como implicações que valem.'
         ]
       };
     }
-    return {
-      stage: 'r3-done',
-      list: ['Tudo resolvido. A porta de escape está aberta.']
-    };
+    return { stage: 'r3-done', list: ['Tudo resolvido. A porta está aberta.'] };
   }
 
   G.rooms[3] = {
     title: 'Servidor Central',
-    build: build,
     hints: hints,
     actions: {
       screen: openScreen,

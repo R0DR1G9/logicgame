@@ -52,7 +52,7 @@ export function buildRoom3(ctx) {
   kit.box(0.5, 0.05, 0.4, lecternMat, lc.x, 0.025, lc.z);
   kit.box(0.18, lc.h - 0.12, 0.18, lecternMat, lc.x, (lc.h - 0.12) / 2 + 0.05, lc.z);
   kit.box(lc.w, 0.05, lc.d, lecternMat, lc.x, lc.h - 0.025, lc.z);
-  const manualInfo = { room: 3, action: 'manual', label: 'Manual de quantificadores' };
+  const manualInfo = { room: 3, action: 'manual', label: 'Manual de classificação' };
   tag(kit.box(0.32, 0.025, 0.5, kit.material(0x1f3a2e, { roughness: 0.7 }), lc.x, lc.h + 0.0125, lc.z), manualInfo);
   const page = new THREE.Mesh(
     new THREE.PlaneGeometry(0.46, 0.3),

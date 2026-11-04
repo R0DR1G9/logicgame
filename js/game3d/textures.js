@@ -415,25 +415,25 @@ export function serverScreenTexture() {
   const made = make(1200, 700, function () {});
   function draw() {
     const p = puzzle();
-    const condition = p && p.r3 ? p.r3.condition : '';
+    const list = p && p.r3 ? p.r3.formulas : [];
     made.redraw(function (ctx, w, h) {
       ctx.fillStyle = '#04141c';
       ctx.fillRect(0, 0, w, h);
       frame(ctx, w, h, '#4dff9a', 10);
-      font(ctx, 54);
-      center(ctx, 'SERVIDOR CENTRAL', w / 2, 80, '#4dff9a');
-      font(ctx, 34, 'normal');
-      center(ctx, 'CONDIÇÃO DE EXCLUSÃO', w / 2, 190, '#7f95b3');
-      font(ctx, fitSize(condition, 1080, 54));
-      center(ctx, condition, w / 2, 300, '#ffb347');
-      font(ctx, 34, 'normal');
-      center(ctx, 'apenas arquivos que satisfazem', w / 2, 410, '#d6e4f5');
-      center(ctx, 'as três condições ao mesmo tempo', w / 2, 460, '#d6e4f5');
-      for (let i = 0; i < 24; i++) {
-        const bar = 20 + ((i * 37) % 70);
-        ctx.fillStyle = i % 5 === 0 ? '#ffb347' : '#1f6b52';
-        ctx.fillRect(80 + i * 44, 640 - bar, 30, bar);
-      }
+      font(ctx, 50);
+      center(ctx, 'FILA DE QUARENTENA', w / 2, 66, '#4dff9a');
+      font(ctx, 26, 'normal');
+      center(ctx, 'classifique cada fórmula no terminal de arquivos', w / 2, 118, '#7f95b3');
+      list.forEach(function (item, i) {
+        const line = (i + 1) + '.  ' + item.text;
+        font(ctx, fitSize(line, 1000, 42), 'normal');
+        ctx.fillStyle = '#ffb347';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(line, 100, 195 + i * 74);
+        ctx.fillStyle = 'rgba(77,255,154,0.2)';
+        ctx.fillRect(100, 195 + i * 74 + 34, w - 200, 2);
+      });
     });
   }
   draw();
@@ -451,19 +451,22 @@ export function manualTexture() {
     ctx.fillRect(250, 10, 12, h - 20);
     font(ctx, 20);
     center(ctx, 'MANUAL DE', 130, 36, '#1f3a2e');
-    center(ctx, 'QUANTIFICADORES', 130, 60, '#1f3a2e');
-    center(ctx, 'REGRAS', 382, 42, '#1f3a2e');
-    font(ctx, 34);
-    center(ctx, '∃x P(x)', 130, 130, '#2a6a4a');
-    center(ctx, '∀x P(x)', 130, 220, '#8a4a1c');
-    font(ctx, 18, 'normal');
-    center(ctx, 'basta um elemento', 130, 165, '#3a3a3a');
-    center(ctx, 'todos precisam', 130, 255, '#3a3a3a');
-    center(ctx, 'um contraexemplo derruba', 382, 120, '#3a3a3a');
+    center(ctx, 'CLASSIFICAÇÃO', 130, 60, '#1f3a2e');
+    center(ctx, 'IMPLICAÇÃO', 382, 42, '#1f3a2e');
+    font(ctx, 26);
+    center(ctx, 'TAUTOLOGIA', 130, 120, '#2a6a4a');
+    center(ctx, 'CONTRADIÇÃO', 130, 200, '#8a4a1c');
+    center(ctx, 'CONTINGÊNCIA', 130, 280, '#1f3a6a');
+    font(ctx, 17, 'normal');
+    center(ctx, 'sempre V', 130, 150, '#3a3a3a');
+    center(ctx, 'sempre F', 130, 230, '#3a3a3a');
+    center(ctx, 'às vezes V e F', 130, 310, '#3a3a3a');
     font(ctx, 28);
-    center(ctx, '¬∀x P(x)', 382, 190, '#1f3a2e');
-    center(ctx, '≡', 382, 225, '#1f3a2e');
-    center(ctx, '∃x ¬P(x)', 382, 260, '#1f3a2e');
+    center(ctx, 'A ⇒ B', 382, 120, '#1f3a2e');
+    font(ctx, 17, 'normal');
+    center(ctx, 'quando A → B', 382, 160, '#3a3a3a');
+    center(ctx, 'é tautologia', 382, 185, '#3a3a3a');
+    center(ctx, 'ordem: ¬ ∧ ∨ → ↔', 382, 250, '#8a4a1c');
   }).texture;
 }
 
@@ -471,29 +474,28 @@ export function filesTexture() {
   const made = make(512, 300, function () {});
   function draw(done) {
     const p = puzzle();
-    const numbers = p && p.r3 ? p.r3.grid : [];
+    const list = p && p.r3 ? p.r3.formulas : [];
     made.redraw(function (ctx, w, h) {
       ctx.fillStyle = '#04141c';
       ctx.fillRect(0, 0, w, h);
       frame(ctx, w, h, done ? '#4dff9a' : '#3de0ff', 6);
       font(ctx, 22);
       center(ctx, 'TERMINAL DE ARQUIVOS', w / 2, 30, '#3de0ff');
-      numbers.forEach(function (n, i) {
-        const x = 24 + (i % 6) * 80;
-        const y = 66 + Math.floor(i / 6) * 84;
-        const gone = done && p.r3.satisfies(n);
-        ctx.fillStyle = gone ? '#0a0f16' : '#0b2a3a';
-        ctx.fillRect(x, y, 70, 70);
-        ctx.strokeStyle = gone ? '#3a2030' : '#3de0ff';
+      list.forEach(function (item, i) {
+        const x = 24 + (i % 3) * 156;
+        const y = 56 + Math.floor(i / 3) * 90;
+        ctx.fillStyle = done ? '#0b2a1f' : '#0b2a3a';
+        ctx.fillRect(x, y, 146, 80);
+        ctx.strokeStyle = done ? '#4dff9a' : '#3de0ff';
         ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, 70, 70);
-        font(ctx, 28);
-        center(ctx, gone ? 'x' : String(n), x + 35, y + 30, gone ? '#ff5c7a' : '#d6e4f5');
-        font(ctx, 14, 'normal');
-        center(ctx, gone ? 'removido' : '.dat', x + 35, y + 56, '#7f95b3');
+        ctx.strokeRect(x, y, 146, 80);
+        font(ctx, 26);
+        center(ctx, String(i + 1), x + 73, y + 28, '#d6e4f5');
+        font(ctx, 15, 'normal');
+        center(ctx, done ? p.r3.kinds[item.kind] : 'não classificado', x + 73, y + 60, done ? '#4dff9a' : '#7f95b3');
       });
       font(ctx, 20, 'normal');
-      center(ctx, done ? 'EXCLUSÃO CONCLUÍDA' : '[E] ou clique para abrir', w / 2, 262, done ? '#4dff9a' : '#7f95b3');
+      center(ctx, done ? 'CLASSIFICAÇÃO CONCLUÍDA' : '[E] ou clique para abrir', w / 2, 270, done ? '#4dff9a' : '#7f95b3');
     });
   }
   draw(false);
@@ -679,47 +681,31 @@ export function islandsTexture() {
   return { texture: made.texture, set: draw };
 }
 
-export function relationsTexture() {
+export function tableauTexture() {
   const made = make(1200, 700, function () {});
   function draw() {
     const p = puzzle();
-    const data = p && p.r5 ? p.r5.relations : null;
+    const data = p && p.r5 ? p.r5.tableau : null;
     made.redraw(function (ctx, w, h) {
       ctx.fillStyle = '#12091d';
       ctx.fillRect(0, 0, w, h);
       frame(ctx, w, h, '#c78bff', 10);
       font(ctx, 46);
-      center(ctx, 'MATRIZ DE RELAÇÕES', w / 2, 56, '#c78bff');
+      center(ctx, 'ÁRVORE DE REFUTAÇÃO', w / 2, 56, '#c78bff');
+      font(ctx, 24, 'normal');
+      center(ctx, 'o conjunto é satisfatível? monte o tableau de cada um', w / 2, 102, '#7f95b3');
       if (!data) {
         return;
       }
-      const cell = 62;
-      const x0 = 80;
-      const y0 = 170;
-      font(ctx, 26);
-      for (let i = 0; i < data.size; i++) {
-        center(ctx, String(i + 1), x0 + (i + 1.5) * cell, y0 + cell / 2, '#ffb347');
-        center(ctx, String(i + 1), x0 + cell / 2, y0 + (i + 1.5) * cell, '#ffb347');
-      }
-      data.matrix.forEach(function (row, i) {
-        row.forEach(function (value, j) {
-          const x = x0 + (j + 1) * cell;
-          const y = y0 + (i + 1) * cell;
-          ctx.fillStyle = value ? 'rgba(199,139,255,0.35)' : '#0a0f18';
-          ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
-          font(ctx, 30);
-          center(ctx, value ? '1' : '0', x + cell / 2, y + cell / 2, value ? '#ffffff' : '#59627a');
-        });
-      });
-      font(ctx, 22, 'normal');
-      center(ctx, 'R(x,y): linha x, coluna y', x0 + (data.size + 1) * cell / 2, y0 + (data.size + 1) * cell + 36, '#7f95b3');
-      data.statements.forEach(function (item, i) {
-        const line = (i + 1) + '. ' + item.text;
-        font(ctx, fitSize(line, 640, 32), 'normal');
+      data.sets.forEach(function (set, i) {
+        const line = (i + 1) + '.  { ' + set.formulas.map(function (item) { return item.text; }).join(' ,  ') + ' }';
+        font(ctx, fitSize(line, 1080, 32), 'normal');
         ctx.fillStyle = '#d6e4f5';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(line, 500, 150 + i * 88);
+        ctx.fillText(line, 60, 180 + i * 100);
+        ctx.fillStyle = 'rgba(199,139,255,0.25)';
+        ctx.fillRect(60, 180 + i * 100 + 40, w - 120, 2);
       });
     });
   }

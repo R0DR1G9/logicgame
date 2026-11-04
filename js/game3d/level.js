@@ -87,7 +87,7 @@ export const room4 = {
 
 export const room5 = {
   islands: { x: -HALF + 0.02, y: 1.85, z: -37.2, w: 2.4, h: 1.4 },
-  relations: { x: HALF - 0.02, y: 1.85, z: -37.2, w: 2.4, h: 1.4 },
+  tableau: { x: HALF - 0.02, y: 1.85, z: -37.2, w: 2.4, h: 1.4 },
   desk: { x: 2.4, z: -40.5, w: 1.8, d: 0.8, h: 0.8 },
   chair: { x: 2.4, z: -39.4, w: 0.5, d: 0.5 },
   seals: { x: -2.4, y: 1.7, w: 1.6, h: 0.7 },

@@ -111,44 +111,54 @@
     });
   }
 
-  function matrixTable(data) {
-    const table = ui.el('table', 'logic-table compact');
-    const head = ui.el('tr');
-    head.appendChild(ui.el('th', '', 'R'));
-    for (let j = 0; j < data.size; j++) {
-      head.appendChild(ui.el('th', '', String(j + 1)));
-    }
-    table.appendChild(head);
-    data.matrix.forEach(function (row, i) {
-      const tr = ui.el('tr');
-      tr.appendChild(ui.el('th', '', String(i + 1)));
-      row.forEach(function (cell) {
-        tr.appendChild(ui.el('td', '', cell ? '1' : '0'));
-      });
-      table.appendChild(tr);
+  const TABLEAU_RULES = [
+    ['¬¬A', 'A'],
+    ['A ∧ B', 'A e B no mesmo ramo'],
+    ['¬(A ∧ B)', 'ramo com ¬A e ramo com ¬B'],
+    ['A ∨ B', 'ramo com A e ramo com B'],
+    ['¬(A ∨ B)', '¬A e ¬B no mesmo ramo'],
+    ['A → B', 'ramo com ¬A e ramo com B'],
+    ['¬(A → B)', 'A e ¬B no mesmo ramo'],
+    ['A ↔ B', 'ramo com A e B e ramo com ¬A e ¬B'],
+    ['¬(A ↔ B)', 'ramo com A e ¬B e ramo com ¬A e B']
+  ];
+
+  function rulesCard() {
+    const card = ui.el('div', 'rule');
+    card.appendChild(ui.el('h3', '', 'Regras do tableau'));
+    TABLEAU_RULES.forEach(function (rule) {
+      card.appendChild(ui.el('div', 'rule-line', rule[0] + '  →  ' + rule[1]));
     });
-    return table;
+    card.appendChild(ui.el('div', 'rule-line', 'Um ramo fecha ao conter X e ¬X. Se algum ramo completo fica aberto, o conjunto é satisfatível.'));
+    return card;
   }
 
-  function openRelations() {
-    const data = puzzle().relations;
+  function openTableau() {
+    const data = puzzle().tableau;
     const extra = ui.el('div', 'stack');
-    ui.append(
-      extra,
-      ui.el('p', 'modal-text', 'Universo {1, 2, 3, 4, 5}. R(x,y) é verdadeiro quando a linha x tem 1 na coluna y.'),
-      matrixTable(data)
+    const list = ui.el('ol', 'premises');
+    data.sets.forEach(function (set) {
+      const row = ui.el('li');
+      row.appendChild(ui.el('span', 'sym', '{ ' + set.formulas.map(function (item) { return item.text; }).join(' ,  ') + ' }'));
+      list.appendChild(row);
+    });
+    ui.append(extra, rulesCard(), list);
+    G.main.collect(
+      'r5-tableau',
+      5,
+      'Regras do tableau',
+      TABLEAU_RULES.map(function (rule) { return rule[0] + ' -> ' + rule[1]; }).join('\n') + '\nRamo fecha com X e ¬X. Ramo aberto completo = satisfatível.'
     );
     submitStage({
-      key: 'r5relations',
-      stage: 'relations',
-      title: 'Matriz de Relações',
-      intro: 'Marque V nas afirmações verdadeiras para esta relação e F nas falsas.',
+      key: 'r5tableau',
+      stage: 'tableau',
+      title: 'Árvore de Refutação',
+      intro: 'Para cada conjunto, monte o tableau com as regras abaixo. Marque V se o conjunto é satisfatível (existe ramo aberto) e F se todos os ramos fecham.',
       extra: extra,
-      labels: data.statements.map(function (item, i) { return String(i + 1); }),
-      texts: data.statements.map(function (item) { return item.text; }),
-      answer: data.statements.map(function (item) { return item.truth; }),
-      action: 'Validar afirmações',
-      doneText: 'Relação validada. O segundo selo se abriu.',
+      labels: data.sets.map(function (item, i) { return String(i + 1); }),
+      answer: data.sets.map(function (item) { return item.sat; }),
+      action: 'Validar tableaux',
+      doneText: 'Tableaux validados. O segundo selo se abriu.',
       okToast: 'Segundo selo aberto.'
     });
   }
@@ -190,13 +200,13 @@
         ]
       };
     }
-    if (!state.isSolved('r5relations')) {
+    if (!state.isSolved('r5tableau')) {
       return {
-        stage: 'r5-relations',
+        stage: 'r5-tableau',
         list: [
-          '∀ pede que valha para todos os elementos, ∃ pede que exista pelo menos um.',
-          'Em ∃y ∀x, procure uma coluna inteira de 1. Em ∀x ∃y, toda linha precisa ter algum 1.',
-          'Para simetria, compare cada célula com a sua espelhada pela diagonal.'
+          'Comece pelas regras que não abrem ramos (∧, ¬∨, ¬→, ¬¬) e deixe as que bifurcam para depois.',
+          'Um ramo fecha quando contém uma fórmula e a sua negação. Basta um ramo aberto e completo para o conjunto ser satisfatível.',
+          'Se todos os ramos fecham, o conjunto é insatisfatível: nenhuma linha da tabela-verdade torna todas as fórmulas verdadeiras.'
         ]
       };
     }
@@ -218,7 +228,7 @@
     hints: hints,
     actions: {
       islands: openIslands,
-      relations: openRelations,
+      tableau: openTableau,
       args: openArgs
     }
   };
