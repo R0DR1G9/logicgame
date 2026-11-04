@@ -27,9 +27,9 @@ Depois acesse `http://localhost:8765/index.html`. Não precisa instalar nada, o 
 | 2 | Intermediária | Dedução com premissas | Cruzar premissas sobre suspeitos para descobrir o culpado e formar o código do cofre |
 | 3 | Pouco difícil | Tautologia, contradição, contingência, precedência e implicação lógica | Classificar 6 fórmulas pela tabela-verdade para expor o cadeado e depois julgar 5 implicações A ⇒ B para abri-lo |
 | 4 | Difícil | Equivalências lógicas | Deduzir o estado das válvulas a partir de premissas e escolher a fórmula equivalente (De Morgan, contrapositiva, implicação material) |
-| 5 | Muito difícil | Cavaleiros e mentirosos, quantificadores aninhados e validade de argumentos | Três selos independentes: identificar quem diz a verdade, julgar afirmações sobre uma relação e separar argumentos válidos dos inválidos |
+| 5 | Muito difícil | Cavaleiros e mentirosos, tableaux semânticos e validade de argumentos | Três selos independentes: identificar quem diz a verdade, montar tableaux para decidir se conjuntos de fórmulas são satisfatíveis e separar argumentos válidos dos inválidos |
 
-As salas 1 a 4 usam lógica proposicional. Na sala 5, o selo das relações ainda usa quantificadores e será trocado por conteúdo proposicional.
+Todo o conteúdo do jogo é lógica proposicional, dentro das aulas 2 a 10 da disciplina.
 
 ## Desafios gerados por semente
 

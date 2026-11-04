@@ -16,7 +16,7 @@
     ['Nível 2', 'Dedução com premissas: descubra quem é culpado e abra o cofre.'],
     ['Nível 3', 'Tautologia, contradição e contingência, precedência dos conectivos e implicação lógica.'],
     ['Nível 4', 'Sistema de premissas e equivalências: De Morgan, contrapositiva e implicação material.'],
-    ['Nível 5', 'Cavaleiros e mentirosos, quantificadores sobre uma relação e validade de argumentos.']
+    ['Nível 5', 'Cavaleiros e mentirosos, tableaux semânticos e validade de argumentos.']
   ];
 
   function open() {
