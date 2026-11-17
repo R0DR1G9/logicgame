@@ -19,7 +19,7 @@
   }
 
   function write() {
-    if (!G.view3d || !G.view3d.isRunning()) {
+    if ((G.demo && G.demo.isActive()) || !G.view3d || !G.view3d.isRunning()) {
       return false;
     }
     try {
@@ -36,6 +36,9 @@
   }
 
   function clear() {
+    if (G.demo && G.demo.isActive()) {
+      return;
+    }
     try {
       root.localStorage.removeItem(KEY);
     } catch (error) {
