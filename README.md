@@ -17,7 +17,17 @@ Depois acesse `http://localhost:8765/index.html`. Não precisa instalar nada, o 
 - Objetivo: atravessar as 5 salas e sair antes de o tempo acabar.
 - O relógio de 14 minutos vale para a partida inteira, nunca pausa e, se zerar, você perde e recomeça.
 - Controles: W A S D ou setas para andar, mouse para olhar, Shift para correr, E ou clique para interagir, C para o caderno de pistas, H para dica, Esc para pausar.
-- Os desafios mudam a cada partida. Nas salas 4 e 5, uma resposta errada trava o painel por alguns segundos, o que impede resolver por tentativa e erro.
+- Os desafios mudam a cada partida. Nas salas 3, 4 e 5, uma resposta errada trava o painel por alguns segundos, o que impede resolver por tentativa e erro.
+
+## Modo apresentação
+
+Pensado para demonstrar o jogo sem depender de resolver os desafios na hora. No menu, escolha **Modo apresentação** e depois a sala em que quer começar:
+
+- Os desafios são sempre os mesmos (semente fixa), então dá para ensaiar.
+- Não há relógio e o HUD mostra DEMO.
+- A tecla G, ou o botão **Gabarito** no topo, abre as respostas da sala atual.
+- Começar em uma sala já deixa as anteriores resolvidas, então dá para mostrar só a sala 4, por exemplo.
+- O jogo salvo de verdade não é alterado, e a vitória na demo não vale como partida real.
 
 ## A lógica em cada sala
 

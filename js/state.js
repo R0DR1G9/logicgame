@@ -31,6 +31,10 @@
         current.deadline = current.startedAt + G.config.timeLimitSeconds * 1000;
       }
     },
+    freezeClock: function () {
+      current.startedAt = Date.now();
+      current.deadline = current.startedAt + 24 * 3600 * 1000;
+    },
     clockStarted: function () {
       return current.deadline !== null;
     },

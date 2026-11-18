@@ -83,6 +83,7 @@
   }
 
   function startNew() {
+    G.demo.end();
     G.save.clear();
     G.state.reset(G.rng.newSeed());
     G.puzzle = G.generator.generate(G.state.seed());
@@ -91,6 +92,11 @@
   }
 
   function updateTimer() {
+    if (G.demo.isActive()) {
+      dom.timer.textContent = 'DEMO';
+      dom.timer.classList.remove('is-low');
+      return;
+    }
     const left = G.state.remainingSeconds();
     dom.timer.textContent = formatTime(left);
     dom.timer.classList.toggle('is-low', G.state.clockStarted() && left <= 60);
@@ -142,6 +148,7 @@
       refreshMenu();
       return;
     }
+    G.demo.end();
     G.state.load(data.state);
     G.puzzle = G.generator.generate(G.state.seed());
     if (G.state.expired()) {
@@ -156,6 +163,7 @@
 
   function toMenu() {
     G.save.write();
+    G.demo.end();
     if (G.view3d) {
       G.view3d.stop();
     }
@@ -225,6 +233,7 @@
 
     byId('btn-new').addEventListener('click', askNewGame);
     dom.continueBtn.addEventListener('click', continueGame);
+    byId('btn-demo').addEventListener('click', G.demo.openMenu);
     byId('btn-help').addEventListener('click', G.help.open);
     byId('btn-settings').addEventListener('click', G.settings.open);
     byId('btn-restart').addEventListener('click', startNew);
@@ -253,6 +262,7 @@
   }
 
   G.main = {
+    enter: enter,
     render: render,
     updateHud: updateHud,
     collect: collect,
